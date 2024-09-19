@@ -44,7 +44,8 @@ private:
     static void handle_output(bot* bot_to_handle);
 
     bot_socket m_bot_socket;
-    
+
+    bool m_alive;
 
 public:
     bot(std::string serverIp, int port, std::string username, std::string channel);
@@ -54,4 +55,6 @@ public:
     std::string get_next_message();
     void send_message(const std::string message);
 
+    void die();
+    bool alive();
 };

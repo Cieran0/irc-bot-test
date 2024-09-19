@@ -49,9 +49,12 @@ int main() {
     host_name = host_name.substr(1,split-1);
     std::cout << "Host name: " << host_name << std::endl;
 
-    while (true)
+    while (slap_bot.alive())
     {
         std::string message = slap_bot.get_next_message();
+        if(message.empty()) {
+            continue;
+        }
         if(message.starts_with("PING")) {
             message[1] = 'O';
             slap_bot.send_message(message); 
@@ -117,5 +120,6 @@ int main() {
 
         }
     }
+    std::cout << "DIED" << std::endl;
     
 }

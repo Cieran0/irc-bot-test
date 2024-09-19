@@ -34,7 +34,7 @@ bot::~bot()
 
 std::string bot::get_next_message() {
     std::string message;
-    while (message.empty()) {
+    while (message.empty() && m_alive) {
         {
             const std::lock_guard<std::mutex> lock(m_input_lock);
             if (!m_input_buffer.empty()) {
@@ -59,7 +59,7 @@ void bot::handle_input(bot* bot_to_handle) {
     char buffer[1024];
     int bytes_received = -1;
 
-    while (true) {
+    while (bot_to_handle->m_alive) {
         bytes_received = recv(bot_to_handle->m_bot_socket, buffer, sizeof(buffer) - 1, 0);
         if (bytes_received > 0) {
             buffer[bytes_received] = '\0';
@@ -76,8 +76,10 @@ void bot::handle_input(bot* bot_to_handle) {
         } else {
             if (bytes_received == 0) {
                 std::cout << "Connection closed by server." << std::endl;
+                bot_to_handle->die();
             } else {
                 std::cerr << "recv failed with error: " << strerror(errno) << std::endl;
+                bot_to_handle->die();
             }
             break;
         }
@@ -85,7 +87,7 @@ void bot::handle_input(bot* bot_to_handle) {
 }
 
 void bot::handle_output(bot* bot_to_handle) {
-    while (true) {
+    while (bot_to_handle->m_alive) {
         std::string message;
         {
             std::lock_guard<std::mutex> lock(bot_to_handle->m_output_lock);
@@ -143,12 +145,23 @@ int bot::initializeConnection() {
         clean_up();
         return 1;
     }
-    
+
+    m_alive = true;
+
     m_input_thread = std::thread(handle_input, this);
     m_output_thread = std::thread(handle_output, this);
 
     m_input_thread.detach();
     m_output_thread.detach();
 
+
     return 0;
+}
+
+void bot::die() {
+    m_alive = false;
+}
+
+bool bot::alive() {
+    return m_alive;
 }
