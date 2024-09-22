@@ -39,7 +39,6 @@ int main() {
     std::string random_sentence = "You suck lol";
 
     bot slap_bot(ip,6667,bot_name,place);
-    slap_bot.initializeConnection();
     slap_bot.send_message("NICK slap_bot\r\n");
     slap_bot.send_message("USER slap_bot 0 * :Gamer\r\n");
     slap_bot.send_message("JOIN #\r\n");
