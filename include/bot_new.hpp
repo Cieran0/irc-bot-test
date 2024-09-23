@@ -26,13 +26,21 @@
 
 int main(int argc, char** argv);
 
+extern std::mutex readLock;
+extern std::queue <std::string>readMessages;
+extern std::mutex sendLock;
+extern std::queue <std::string>sendMessages;
+extern std::thread readThread;
+extern std::thread writeThread;
+
+
 namespace bot {
 
     #ifdef _WIN32
-        typedef SOCKET socket;  // Use SOCKET on Windows
+        typedef SOCKET clientSocket;  // Use SOCKET on Windows
         #define close_socket(s) closesocket(s)
     #else
-        typedef int socket;  // Use int on Linux
+        typedef int clientSocket;  // Use int on Linux
         #define close_socket(s) close(s)
     #endif
 
@@ -45,15 +53,16 @@ namespace bot {
 
     int main(const std::string_view& program, const std::vector<std::string_view>& arguments);
     bot::details getDetailsFromArguments(const std::vector<std::string_view>& arguments);
-    bot::socket openSocket(const bot::details& botDetails);
-    void handleSocket(bot::socket botSocket);
+    bot::clientSocket openSocket(const bot::details& botDetails);
+    void startThreads(bot::clientSocket botSocket);
+    void readMessage(bot::clientSocket botSocket);
+    void writeMessage(bot::clientSocket botSocket); 
+    void addToSendQueue(std::string stringToAdd);
+    std::string readFromQueue();
 
     /*IDK?*/
 
-    void sendInitalMessages(/*args*/);
-    std::string getNextMessage(/*args*/);
-    void handleMessage(const std::string& message/*args*/);
-    void sendMessage(/*args*/);
+    void sendInitalMessages(bot::clientSocket botSocket);
 
     extern bool isAlive;
 }

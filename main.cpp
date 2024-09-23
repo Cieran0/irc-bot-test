@@ -1,5 +1,6 @@
 #include <bot_new.hpp>
 
+
 int main(int argc, char** argv) {
     std::vector<std::string_view> args;
 
@@ -9,6 +10,14 @@ int main(int argc, char** argv) {
     return bot::main(std::string_view(argv[0]), args);
 }
 
+std::mutex readLock;
+std::queue <std::string>readMessages;
+
+std::mutex sendLock;
+std::queue <std::string>sendMessages;
+
+std::thread readThread;
+std::thread writeThread;
 
 bool bot::isAlive = false;
 /*
@@ -17,16 +26,17 @@ bool bot::isAlive = false;
 int bot::main(const std::string_view& program, const std::vector<std::string_view>& arguments) {
     
     bot::details botDetails = bot::getDetailsFromArguments(arguments);
+    
+    bot::clientSocket botSocket = bot::openSocket(botDetails);
 
-    bot::socket botSocket = bot::openSocket(botDetails);
+    bot::sendInitalMessages(botSocket);
 
-    bot::handleSocket(botSocket);
+    bot::startThreads(botSocket);
 
-    while(bot::isAlive) {
-        std::string message = bot::getNextMessage();
-        bot::handleMessage(message);
+    while (true){
+        std::cout << readFromQueue() << "\n";
     }
-
+    
     return 0;
 }
 
@@ -43,36 +53,132 @@ bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& a
     return botDetails;
 }
 
-bot::socket bot::openSocket(const bot::details& botDetails) {
+bot::clientSocket bot::openSocket(const bot::details& botDetails) {
 
-    bot::socket socket = 0;
+    bot::clientSocket botSocks = 0;
 
     //TODO: connect to server
 
-    return socket;
+    int status, valread;
+    struct sockaddr_in6 serv_addr;
+    std::string hello = "Ive connected!\n";
+    char buffer[1024] = { 0 };
+
+    if ((botSocks = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
+        std::cout << "\n Socket creation error \n";
+        return -1;
+    }
+
+    std::string port = std::string(botDetails.port);
+
+    serv_addr.sin6_family = AF_INET6;
+    serv_addr.sin6_port = htons(stoi(port, 0, 10));
+
+    if (inet_pton(AF_INET6, "::1", &serv_addr.sin6_addr) <= 0) 
+    {
+       std::cout << "\nInvalid address/ Address not supported \n";
+        return -1;
+    }
+
+    if ((status = connect(botSocks, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) 
+    {
+        printf("\nConnection Failed \n");
+        return -1;
+    }
+
+    return botSocks;
 }
 
-void bot::handleSocket(bot::socket botSocket) {
+void bot::startThreads(bot::clientSocket botSocket) {
+
+    readThread = std::thread(readMessage, botSocket);
+    writeThread = std::thread(writeMessage, botSocket);
+
+    readThread.detach();
+    writeThread.detach();
 
 }   
 
-/*IDK*/
-void bot::sendInitalMessages(/*args*/) {
+void bot::readMessage(bot::clientSocket botSocket) {
+    int valread;
+    char buffer[1024] = { 0 };
 
+    while (true)
+    {
+        valread = read(botSocket, buffer, 1024 -1);
+        
+           if (valread <= 0 )
+            {
+                    std::cout << "NOOOOOO!!!\n";  
+                    break;
+            }  
+
+        readLock.lock();
+        readMessages.push(std::string(buffer));
+        readLock.unlock();
+    }
+    
+}  
+
+void bot::writeMessage(bot::clientSocket botSocket) {
+
+
+    while (true){
+
+    std::string localString;
+
+        sendLock.lock();
+
+            if (!sendMessages.empty())
+            {
+                localString = sendMessages.front();
+                sendMessages.pop();
+            }
+
+        sendLock.unlock();
+
+        if (localString.empty())
+        {
+            usleep(5000);
+            continue;
+        }
+        send(botSocket, localString.c_str(),localString.length(), 0);
+        
+    }
+    
+}  
+
+/*IDK*/
+void bot::sendInitalMessages(bot::clientSocket botSocks) {
+    std::string initialMessage = "connected\n";
+
+    bot::addToSendQueue(initialMessage);
 }
 
-/*IDK*/
-std::string bot::getNextMessage(/*args*/) {
-    return std::string("message");
+void bot::addToSendQueue(std::string stringToAdd){
+       sendLock.lock();
+       sendMessages.push(stringToAdd);
+       sendLock.unlock();
 }
 
-/*IDK*/
-void bot::handleMessage(const std::string& message/*args*/) {
+std::string bot::readFromQueue(){
 
+    std::string storedMessage;
+
+    while (storedMessage.empty())
+    {
+        readLock.lock();
+        if(!readMessages.empty()){
+            storedMessage = readMessages.front();
+            readMessages.pop();
+        }
+        readLock.unlock();
+
+        if(storedMessage.empty()) {
+            usleep(5000);
+        }
+    }
+    
+
+    return storedMessage;
 }
-
-/*IDK*/
-void bot::sendMessage(/*args*/) {
-
-}
-
