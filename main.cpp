@@ -25,18 +25,26 @@ bool bot::isAlive = false;
 */
 int bot::main(const std::string_view& program, const std::vector<std::string_view>& arguments) {
     
+    //TODO: HANDLE ERRORS
     bot::details botDetails = bot::getDetailsFromArguments(arguments);
     
+    //TODO: HANDLE ERRORS
     bot::clientSocket botSocket = bot::openSocket(botDetails);
 
     bot::sendInitalMessages(botSocket);
 
     bot::startThreads(botSocket);
 
-    while (true){
-        std::cout << readFromQueue() << "\n";
+    while (bot::isAlive){
+        std::string message = readFromQueue();
+        if(message.empty())
+            continue; //Should only happen if !bot::isAlive
     }
     
+    if(readThread.joinable())
+        readThread.join();
+    if(writeThread.joinable())
+        writeThread.join();
     return 0;
 }
 
@@ -54,42 +62,49 @@ bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& a
 }
 
 bot::clientSocket bot::openSocket(const bot::details& botDetails) {
+    bot::clientSocket botSocks = -1;
 
-    bot::clientSocket botSocks = 0;
+#ifdef _WIN32
+    // Initialize Winsock
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "WSAStartup failed." << std::endl;
+        return botSocks;
+    }
+#endif
 
-    //TODO: connect to server
-
-    int status, valread;
+    int status;
     struct sockaddr_in6 serv_addr;
-    std::string hello = "Ive connected!\n";
-    char buffer[1024] = { 0 };
 
     if ((botSocks = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
-        std::cout << "\n Socket creation error \n";
-        return -1;
+        std::cerr << "Socket creation error" << std::endl;
+        clean_up();
+        return botSocks;
     }
 
-    std::string port = std::string(botDetails.port);
-
+    memset(&serv_addr, 0, sizeof(serv_addr)); // Needed for windows?
     serv_addr.sin6_family = AF_INET6;
-    serv_addr.sin6_port = htons(stoi(port, 0, 10));
+    serv_addr.sin6_port = htons(6667);
 
-    if (inet_pton(AF_INET6, "::1", &serv_addr.sin6_addr) <= 0) 
-    {
-       std::cout << "\nInvalid address/ Address not supported \n";
-        return -1;
+    if (inet_pton(AF_INET6, "::1", &serv_addr.sin6_addr) <= 0) {
+        std::cerr << "Invalid address/ Address not supported" << std::endl;
+        clean_up();
+        return botSocks;
     }
 
-    if ((status = connect(botSocks, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) 
-    {
-        printf("\nConnection Failed \n");
-        return -1;
+    if ((status = connect(botSocks, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
+        std::cerr << "Connection Failed" << std::endl;
+        close_socket(botSocks);
+        clean_up();
+        return botSocks;
     }
 
     return botSocks;
 }
 
 void bot::startThreads(bot::clientSocket botSocket) {
+
+    bot::isAlive = true;
 
     readThread = std::thread(readMessage, botSocket);
     writeThread = std::thread(writeMessage, botSocket);
@@ -103,14 +118,14 @@ void bot::readMessage(bot::clientSocket botSocket) {
     int valread;
     char buffer[1024] = { 0 };
 
-    while (true)
+    while (bot::isAlive)
     {
-        valread = read(botSocket, buffer, 1024 -1);
+        valread = recv(botSocket, buffer, 1024 -1, 0);
         
            if (valread <= 0 )
             {
-                    std::cout << "NOOOOOO!!!\n";  
-                    break;
+                bot::die();
+                break;
             }  
 
         readLock.lock();
@@ -123,7 +138,7 @@ void bot::readMessage(bot::clientSocket botSocket) {
 void bot::writeMessage(bot::clientSocket botSocket) {
 
 
-    while (true){
+    while (bot::isAlive){
 
     std::string localString;
 
@@ -139,7 +154,7 @@ void bot::writeMessage(bot::clientSocket botSocket) {
 
         if (localString.empty())
         {
-            usleep(5000);
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
             continue;
         }
         send(botSocket, localString.c_str(),localString.length(), 0);
@@ -172,7 +187,7 @@ std::string bot::readFromQueue(){
 
     std::string storedMessage;
 
-    while (storedMessage.empty())
+    while (storedMessage.empty() && bot::isAlive)
     {
         readLock.lock();
         if(!readMessages.empty()){
@@ -182,10 +197,15 @@ std::string bot::readFromQueue(){
         readLock.unlock();
 
         if(storedMessage.empty()) {
-            usleep(5000);
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
     }
     
 
     return storedMessage;
+}
+
+void bot::die() {
+    std::cout << "Disconnect from server" << std::endl;
+    bot::isAlive = false;
 }

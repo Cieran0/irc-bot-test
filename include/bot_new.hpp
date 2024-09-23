@@ -16,11 +16,14 @@
 #ifdef _WIN32
     #include <winsock2.h>
     #include <ws2tcpip.h>
+    #define clean_up() WSACleanup()
+    #define close_socket(s) closesocket(s)  // Windows uses closesocket()
 #else
     #include <sys/socket.h>
     #include <arpa/inet.h>
     #include <unistd.h>
-   
+    #define clean_up() 
+    #define close_socket(s) close(s)  // Linux uses close()
 #endif
 
 
@@ -59,6 +62,7 @@ namespace bot {
     void writeMessage(bot::clientSocket botSocket); 
     void addToSendQueue(std::string stringToAdd);
     std::string readFromQueue();
+    void die();
 
     /*IDK?*/
 

@@ -8,6 +8,3 @@ endif
 
 all:
 	g++ -std=c++20 *.cpp -Wall $(libs) -o $(output) -Iinclude
-
-header:
-	python gen_header.py
