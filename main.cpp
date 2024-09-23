@@ -150,9 +150,16 @@ void bot::writeMessage(bot::clientSocket botSocket) {
 
 /*IDK*/
 void bot::sendInitalMessages(bot::clientSocket botSocks) {
-    std::string initialMessage = "connected\n";
+    std::string initialMessage1 = "NICK stap_bot2\r\n";
+    std::string initialMessage2 = "USER slap_bot 0 * :Gamer\r\n";
+    std::string initialMessage3 = "JOIN #\r\n";
 
-    bot::addToSendQueue(initialMessage);
+
+
+    bot::addToSendQueue(initialMessage1);
+    bot::addToSendQueue(initialMessage2);
+    bot::addToSendQueue(initialMessage3);
+
 }
 
 void bot::addToSendQueue(std::string stringToAdd){
