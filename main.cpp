@@ -1,5 +1,5 @@
 #include <bot_new.hpp>
-
+#include <irc.hpp>
 
 int main(int argc, char** argv) {
     std::vector<std::string_view> args;
@@ -39,6 +39,16 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
         std::string message = readFromQueue();
         if(message.empty())
             continue; //Should only happen if !bot::isAlive
+
+        irc::command recievedCommand = irc::parseCommand(message);
+        
+        //parseCommand failed
+        if(recievedCommand.name.empty()) {
+            std::cerr << "Failed to parse: [" << message << "]" << std::endl;
+            return -10;
+        }
+
+        std::cout << "Command: " << recievedCommand.name << std::endl;
     }
     
     if(readThread.joinable())
@@ -120,6 +130,7 @@ void bot::readMessage(bot::clientSocket botSocket) {
 
     while (bot::isAlive)
     {
+        memset(buffer, 0, sizeof(buffer));
         valread = recv(botSocket, buffer, 1024 -1, 0);
         
            if (valread <= 0 )
@@ -128,8 +139,11 @@ void bot::readMessage(bot::clientSocket botSocket) {
                 break;
             }  
 
+        std::vector<std::string> split_by_newline = split_string(std::string(buffer), "\r\n", false);
         readLock.lock();
-        readMessages.push(std::string(buffer));
+        for(const std::string& string : split_by_newline) {
+            readMessages.push(string);
+        }
         readLock.unlock();
     }
     
