@@ -49,6 +49,8 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
         }
 
         std::cout << "Command: " << recievedCommand.name << std::endl;
+
+        bot::handleCommand(recievedCommand);
     }
     
     if(readThread.joinable())
@@ -222,4 +224,105 @@ std::string bot::readFromQueue(){
 void bot::die() {
     std::cout << "Disconnect from server" << std::endl;
     bot::isAlive = false;
+}
+
+void handleServerCommand(std::string hostname, std::vector<std::string> arguments) {
+    //std::cout << "HOSTNAME [" << hostname << "]" << std::endl;
+    //for (size_t i = 0; i < arguments.size(); i++)
+    //{
+    //    std::cout << "ARG"<<i<<"["<<arguments[i]<<"]" << std::endl;
+    //}
+    irc::numeric_reply num;
+    if(!irc::isKnownNumericReply(arguments[0])) {
+        std::cout << "UKNKOWN" << arguments[0] << std::endl;
+        //FIXME: crash on uknown thing
+        exit(-1);
+    }
+
+    num = (irc::numeric_reply)std::stoi(arguments[0]);
+
+    if(num == irc::numeric_reply::RPL_WELCOME) {
+        //TODO: do stuff here maybe
+    }
+    else if (num == irc::numeric_reply::RPL_YOURHOST) {
+        //TODO: do stuff here maybe
+    }
+    else if (num == irc::numeric_reply::RPL_ENDOFNAMES) {
+        //TODO: do stuff here maybe
+    } else if (num == irc::numeric_reply::RPL_NOTOPIC) {    
+        //TODO: do stuff here maybe
+    } else if (num == irc::RPL_NAMREPLY) {
+        //TODO: do stuff here maybe
+    }
+    else {
+        std::cout << "Unhandled: " << irc::validNumericReplies.find(num)->second << std::endl;
+    }
+}
+
+void handleUserCommand(std::string nickname, std::string username, std::string ip, std::vector<std::string> arguments) {
+    //std::cout << "NICK [" << nickname << "]" << std::endl;
+    //std::cout << "USERNAME [" << username << "]" << std::endl;
+    //std::cout << "IP [" << ip << "]" << std::endl;
+    //std::cout << "COMMAND [" << arguments[0] << "]" << std::endl;
+    //for (size_t i = 1; i < arguments.size(); i++)
+    //{
+    //    std::cout << "ARG"<<i<<"["<<arguments[i]<<"]" << std::endl;
+    //}
+
+    if(arguments[0] == "PRIVMSG") {
+        std::string channel = arguments[1];
+        std::string text = arguments[2];
+        std::string response;
+        //FIXME: dont hard code nickname
+        if(channel == "stap_bot2") {
+            //privmsg to bot
+            //std::cout << nickname << " said " << text << " in dms" << std::endl;
+            response = "Random sentence";
+            channel = nickname;
+        } else {
+            //in a channel
+            //std::cout << nickname << " said " << text << " in " <<channel << std::endl;
+            response = text;
+        }
+
+        std::string out = "PRIVMSG "+channel+" :" + response+"\r\n";
+        bot::addToSendQueue(out);
+    }
+    else if (arguments[0] == "JOIN") {
+        std::string channel = arguments[1];
+        std::cout << "joined channel: [" << channel << "]" << std::endl;
+    } 
+    else {
+        std::cerr << "UKNOWN COMMAND " << arguments[0] << std::endl;
+        //FIXME: crash on unknown commands;
+        exit(-1);
+    }
+}
+
+void bot::handleCommand(irc::command commandToHandle) {
+    if(commandToHandle.name.starts_with(":")) {
+        std::string server_or_user_nickname = commandToHandle.name.substr(1,commandToHandle.name.length()-1);
+        std::cout << server_or_user_nickname << std::endl;
+        size_t end_of_nickname = server_or_user_nickname.find('!');
+        if(end_of_nickname != std::string::npos){
+            //USER
+            size_t end_of_user_name = server_or_user_nickname.find('@');
+            std::string nickname = server_or_user_nickname.substr(0,end_of_nickname);
+            std::string username = server_or_user_nickname.substr(end_of_nickname+1, end_of_user_name-end_of_nickname-1);
+            std::string ip = server_or_user_nickname.substr(end_of_user_name+1);
+            handleUserCommand(nickname,username,ip, commandToHandle.arguments);
+        } else {
+            //Server
+            std::string hostname = server_or_user_nickname;
+            handleServerCommand(hostname, commandToHandle.arguments);
+        }
+    } else if (commandToHandle.name == "PING") {
+        std::cout << "PING" << std::endl;
+        std::string raw = commandToHandle.raw;
+        raw[1] = 'O';
+        raw += "\r\n";
+        bot::addToSendQueue(raw);
+    } else {
+        std::cout << "Uknown command: "<< commandToHandle.name << std::endl;
+    }
 }

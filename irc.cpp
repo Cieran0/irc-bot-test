@@ -1,11 +1,12 @@
 #include <irc.hpp>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 
 irc::command irc::parseCommand(const std::string& message) {
-    size_t name_end = message.find_first_of(' ');
     command parsedCommand;
-    
+    parsedCommand.raw = message;
+    size_t name_end = message.find_first_of(' ');
 
     if (name_end == std::string::npos) {
         return parsedCommand; 
@@ -42,4 +43,19 @@ irc::command irc::parseCommand(const std::string& message) {
     
     // std::cout << "]" << std::endl;
     return parsedCommand;
+}
+
+bool irc::isKnownNumericReply(const std::string& number) {
+    if(number.length() != 3)
+        return false;
+
+    if(!std::all_of(number.begin(), number.end(), isdigit))
+        return false;
+
+    int n = std::stoi(number);
+
+    if(validNumericReplies.find((irc::numeric_reply)n) != validNumericReplies.end())
+        return true;
+
+    return false;
 }

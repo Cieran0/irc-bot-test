@@ -12,6 +12,7 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <irc.hpp>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -67,6 +68,7 @@ namespace bot {
     /*IDK?*/
 
     void sendInitalMessages(bot::clientSocket botSocket);
+    void handleCommand(irc::command commandToHandle);
 
     extern bool isAlive;
 }
