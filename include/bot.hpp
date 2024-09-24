@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <irc.hpp>
+#include <unordered_set>
 
 #ifdef _WIN32
     #include <winsock2.h>
