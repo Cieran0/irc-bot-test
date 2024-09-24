@@ -139,7 +139,7 @@ void bot::readMessage(bot::clientSocket botSocket) {
 
 void bot::respondToMessages(std::string messageRecieved){
 
-        std::string name, message; 
+    std::string name, message; 
 
         std::cout << messageRecieved << std::endl;
 
