@@ -37,8 +37,10 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
 
     while (bot::isAlive){
         std::string message = readFromQueue();
-        if(message.empty())
+        if(message.empty()){
             continue; //Should only happen if !bot::isAlive
+        }
+            bot::respondToMessages(message);
     }
     
     if(readThread.joinable())
@@ -82,7 +84,7 @@ bot::clientSocket bot::openSocket(const bot::details& botDetails) {
         return botSocks;
     }
 
-    memset(&serv_addr, 0, sizeof(serv_addr)); // Needed for windows?
+    memset(&serv_addr, 0, sizeof(serv_addr)); 
     serv_addr.sin6_family = AF_INET6;
     serv_addr.sin6_port = htons(6667);
 
@@ -116,10 +118,10 @@ void bot::startThreads(bot::clientSocket botSocket) {
 
 void bot::readMessage(bot::clientSocket botSocket) {
     int valread;
-    char buffer[1024] = { 0 };
 
     while (bot::isAlive)
     {
+        char buffer[1024] = { 0 };
         valread = recv(botSocket, buffer, 1024 -1, 0);
         
            if (valread <= 0 )
@@ -134,6 +136,65 @@ void bot::readMessage(bot::clientSocket botSocket) {
     }
     
 }  
+
+void bot::respondToMessages(std::string messageRecieved){
+
+        std::string name, message; 
+
+        std::cout << messageRecieved << std::endl;
+
+        message = bot::parseMessage(messageRecieved);
+        name = bot::readName(messageRecieved);
+
+        std::cout << name << message << std::endl;
+
+         if (!message.empty() && message[0]== '!') {
+
+            // bot::addToSendQueue("PRIVMSG # :! hello " + name);
+           bot::addToSendQueue("PRIVMSG # :Hello, "+ name +"\r\n'");
+    }
+        
+}
+
+std::string bot::parseMessage(std::string messageRecieved){
+
+   std::string delimiter = "# :";
+
+        size_t pos = messageRecieved.find(delimiter);
+
+    if (pos != std::string::npos)
+    {
+        pos += delimiter.length();
+
+        std::string message = messageRecieved.substr(pos);
+
+        size_t first = message.find_first_not_of(' ');
+
+            if (first != std::string::npos)
+            {
+                message = message.substr(first);
+                return message;
+            }
+    }
+
+    return "error";
+}
+
+std::string bot::readName(std::string messageRecieved){
+
+    std::regex pattern(":([^!]+)!");
+    std::smatch match;
+
+    if(std::regex_search(messageRecieved, match, pattern)){
+        std::string name = match[1];
+        return name;
+    }else{
+        std::cout << "couldnt find name " << std::endl;
+    }
+
+    return "error";
+
+}
 
 void bot::writeMessage(bot::clientSocket botSocket) {
 

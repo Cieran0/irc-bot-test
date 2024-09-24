@@ -12,6 +12,7 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <regex>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -61,6 +62,9 @@ namespace bot {
     void readMessage(bot::clientSocket botSocket);
     void writeMessage(bot::clientSocket botSocket); 
     void addToSendQueue(std::string stringToAdd);
+    void respondToMessages(std::string messageRecieved);
+    std::string parseMessage(std::string messageRecieved);
+    std::string readName(std::string messageRecieved);
     std::string readFromQueue();
     void die();
 
