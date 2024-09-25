@@ -28,7 +28,7 @@
 #endif
 
 
-int main(int argc, char** argv);
+int main(int argc, const char** argv);
 
 extern std::mutex readLock;
 extern std::queue <std::string>readMessages;
@@ -71,7 +71,7 @@ namespace bot {
 
     /*IDK?*/
 
-    void sendInitalMessages(bot::clientSocket botSocket);
+    void sendInitalMessages(bot::clientSocket botSocket, bot::details botDetails);
 
     extern bool isAlive;
 }

@@ -1,7 +1,7 @@
 #include <bot_new.hpp>
 
 
-int main(int argc, char** argv) {
+int main(int argc, const char** argv) {
     std::vector<std::string_view> args;
 
     for (int i = 1; i < argc; i++)
@@ -31,7 +31,7 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
     //TODO: HANDLE ERRORS
     bot::clientSocket botSocket = bot::openSocket(botDetails);
 
-    bot::sendInitalMessages(botSocket);
+    bot::sendInitalMessages(botSocket, botDetails);
 
     bot::startThreads(botSocket);
 
@@ -73,6 +73,37 @@ bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& a
     botDetails.name = "slap_bot";
     botDetails.port = "6667";
 
+    for (size_t i = 0; i < arguments.size(); i+=2)
+    {
+        if(arguments.size() < i+2){
+            std::cerr << "Invalid amount of args" << std::endl;
+            exit(-1);
+        }
+        else if(arguments[i] == "--host") {
+            botDetails.ip = arguments[i+1];
+        } 
+        else if (arguments[i] == "--port")
+        {
+            botDetails.port = arguments[i+1];   
+        }
+        else if (arguments[i] == "--name")
+        {
+            botDetails.name = arguments[i+1];
+        }
+        else if (arguments[i] == "--channel")
+        {
+            botDetails.channel = arguments[i+1];
+        }
+        
+        else {
+            std::cerr << "Invalid arg " << arguments[i];
+            exit(-1);
+        }
+    }
+    
+
+ 
+
     return botDetails;
 }
 
@@ -106,13 +137,15 @@ bot::clientSocket bot::openSocket(const bot::details& botDetails) {
         clean_up();
         return botSocks;
     }
-
+    std::cout << "CONNECTING..." << std::endl;
     if ((status = connect(botSocks, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
         std::cerr << "Connection Failed" << std::endl;
         close_socket(botSocks);
         clean_up();
         return botSocks;
     }
+    std::cout << "CONNECTed!" << std::endl;
+
 
     return botSocks;
 }
@@ -244,9 +277,9 @@ void bot::writeMessage(bot::clientSocket botSocket) {
 }  
 
 /*IDK*/
-void bot::sendInitalMessages(bot::clientSocket botSocks) {
-    std::string initialMessage1 = "NICK stap_bot2\r\n";
-    std::string initialMessage2 = "USER slap_bot 0 * :Gamer\r\n";
+void bot::sendInitalMessages(bot::clientSocket botSocks, bot::details botDetails) {
+    std::string initialMessage1 = "NICK " + std::string(botDetails.name) + "\r\n";
+    std::string initialMessage2 = "USER " + std::string(botDetails.name) + " 0 * :Gamer\r\n";
     std::string initialMessage3 = "JOIN #\r\n";
 
 
