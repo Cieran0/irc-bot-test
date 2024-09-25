@@ -42,7 +42,7 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
 
         if (message.find(isPing) != std::string::npos)
         {
-            std::cout << "this shit ponngin" << std::endl;
+            std::cout << "PONG" << std::endl;
             bot::addToSendQueue("PONG :DESKTOP-JPO54SA.wireless.dundee.ac.uk\r\n"); 
         }
 
