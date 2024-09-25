@@ -62,6 +62,7 @@ namespace bot {
     void readMessage(bot::clientSocket botSocket);
     void writeMessage(bot::clientSocket botSocket); 
     void addToSendQueue(std::string stringToAdd);
+    void pong(std::string messageRecieved);
     void respondToMessages(std::string messageRecieved);
     std::string parseMessage(std::string messageRecieved);
     std::string readName(std::string messageRecieved);

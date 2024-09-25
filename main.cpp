@@ -37,10 +37,23 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
 
     while (bot::isAlive){
         std::string message = readFromQueue();
-        if(message.empty()){
+        std::string isPing = "PING";
+        std::string isMessage = "PRIVMSG";
+
+        if (message.find(isPing) != std::string::npos)
+        {
+            std::cout << "this shit ponngin" << std::endl;
+            bot::addToSendQueue("PONG :DESKTOP-JPO54SA.wireless.dundee.ac.uk\r\n"); 
+        }
+
+        else if (message.find(isMessage) != std::string::npos)
+        {
+            bot::respondToMessages(message);
+        }
+
+        else if (message.empty()){
             continue; //Should only happen if !bot::isAlive
         }
-            bot::respondToMessages(message);
     }
     
     if(readThread.joinable())
@@ -115,6 +128,12 @@ void bot::startThreads(bot::clientSocket botSocket) {
     writeThread.detach();
 
 }   
+
+void bot::pong(std::string messageRecieved){
+
+
+
+}
 
 void bot::readMessage(bot::clientSocket botSocket) {
     int valread;
