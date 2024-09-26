@@ -189,21 +189,116 @@ void bot::readMessage(bot::clientSocket botSocket) {
     
 }  
 
+std::vector<std::string> bot::getUsersInChannel(const std::string& sender, const std::string& botName, const std::string& serverResponse) {
+    std::vector<std::string> users;
+    std::istringstream responseStream(serverResponse);
+    std::string line;
+
+    while (std::getline(responseStream, line)) {
+        if (line.find(" 352 ") != std::string::npos) {
+            std::istringstream lineStream(line);
+            std::string token;
+            std::vector<std::string> tokens;
+            while (lineStream >> token) {
+                tokens.push_back(token);
+            }
+
+            if (tokens.size() >= 4) {
+                std::string username = tokens[4];
+               
+                if (username != sender && username != botName) {
+                    users.push_back(username);
+                }
+            }
+        } else if (line.find(" 315 ") != std::string::npos) {
+            // No more users to parse in channel
+            break;
+        }
+    }
+
+    return users;
+}
+
+std::string bot::getRandomUser(const std::string& sender, const std::vector<std::string>& users) {
+    std::vector<std::string> eligibleUsers;
+
+    std::vector<std::string_view> arguments = {};
+    bot::details botInfo = bot::getDetailsFromArguments(arguments);
+
+    for (const std::string& user : users) {
+        if (user != sender && user != botInfo.name) {
+            eligibleUsers.push_back(user);
+        }
+    }
+
+    if (eligibleUsers.empty()) {
+        return "";
+    }
+
+    srand(static_cast<unsigned>(time(0)));
+    int randomIndex = rand() % eligibleUsers.size();
+
+    return eligibleUsers[randomIndex];
+}
+
 void bot::respondToMessages(std::string messageRecieved){
+    std::vector<std::string_view> arguments = {};
+    bot::details botInfo = bot::getDetailsFromArguments(arguments);
 
     std::string name, message; 
 
-        std::cout << messageRecieved << std::endl;
+    std::cout << messageRecieved << std::endl;
 
-        message = bot::parseMessage(messageRecieved);
-        name = bot::readName(messageRecieved);
+    message = bot::parseMessage(messageRecieved);
+    name = bot::readName(messageRecieved);
 
-        std::cout << name << message << std::endl;
+    std::cout << name << message << std::endl;
 
-         if (!message.empty() && message[0]== '!') {
+    bot::addToSendQueue("WHO #\r\n");
 
-            // bot::addToSendQueue("PRIVMSG # :! hello " + name);
-           bot::addToSendQueue("PRIVMSG # :Hello, "+ name +"\r\n'");
+    std::string serverResponse = bot::readFromQueue();
+
+    if (!message.empty() && message[0] == '!') {
+        std::istringstream iss(message);
+        std::string command;
+        iss >> command;
+
+        if (command == "!hello") {
+            bot::addToSendQueue("PRIVMSG # :Hello, " + name + "\r\n");
+        }
+        else if (command == "!slap") {
+            std::vector<std::string> recipients;
+            std::string recipient;
+
+            iss >> recipient;
+
+            std::vector<std::string> usersInChannel = getUsersInChannel(name, std::string{botInfo.name}, serverResponse);
+
+            // if (usersInChannel.empty()) {
+            //     std::cout << "No users in the channel." << std::endl;
+            // } else {
+            //     std::cout << "Users in the channel:" << std::endl;
+
+            //     for (const std::string& user : usersInChannel) {
+            //         std::cout << user << std::endl;
+            //     }
+            // }
+
+            if (!recipient.empty()) {
+                if (std::find(usersInChannel.begin(), usersInChannel.end(), recipient) != usersInChannel.end()) {
+                    bot::addToSendQueue("PRIVMSG # :" + name + " slaps " + recipient + " with a large trout!\r\n");
+                } else {
+                    bot::addToSendQueue("PRIVMSG # :" + name + " slaps themselves with a large trout for trying to slap someone not in the channel!\r\n");
+                }
+            } else {
+                std::string randomUser = getRandomUser(name, usersInChannel);
+                if (!randomUser.empty()) {
+                    bot::addToSendQueue("PRIVMSG # :" + name + " slaps " + randomUser + " with a large trout!\r\n");
+                } else {
+                    bot::addToSendQueue("PRIVMSG # :There's no one to slap in the channel!\r\n");
+                }
+            }
+        }
     }
         
 }

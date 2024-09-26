@@ -64,6 +64,8 @@ namespace bot {
     void addToSendQueue(std::string stringToAdd);
     void pong(std::string messageRecieved);
     void respondToMessages(std::string messageRecieved);
+    std::vector<std::string> getUsersInChannel(const std::string& sender, const std::string& botName, const std::string& serverResponse);
+    std::string getRandomUser(const std::string& sender, const std::vector<std::string>& users);
     std::string parseMessage(std::string messageRecieved);
     std::string readName(std::string messageRecieved);
     std::string readFromQueue();
