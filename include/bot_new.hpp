@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <sstream>
 #include <vector>
+#include <random>
 #include <cstdlib>
 #include <ctime>
 #include <regex>

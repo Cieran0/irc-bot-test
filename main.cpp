@@ -244,6 +244,10 @@ std::string bot::getRandomUser(const std::string& sender, const std::vector<std:
 void bot::respondToMessages(std::string messageRecieved){
     std::vector<std::string_view> arguments = {};
     bot::details botInfo = bot::getDetailsFromArguments(arguments);
+    std::vector<std::string> random_facts = {
+        "Random fact 1",
+        "Random fact 2"
+    };
 
     std::string name, message; 
 
@@ -260,11 +264,15 @@ void bot::respondToMessages(std::string messageRecieved){
 
     if (!message.empty() && message[0] == '!') {
         std::istringstream iss(message);
+        std::random_device rand;
         std::string command;
         iss >> command;
 
         if (command == "!hello") {
-            bot::addToSendQueue("PRIVMSG # :Hello, " + name + "\r\n");
+            std::mt19937 gen(rand);
+            std::uniform_int_distribution<> dis(0, random_facts.size() - 1);
+            std::string message = "PRIVMSG # :Hello, " + name + " :" + random_facts[dis(rand)] + "\r\n";
+            bot::addToSendQueue(message);
         }
         else if (command == "!slap") {
             std::vector<std::string> recipients;
