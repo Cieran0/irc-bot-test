@@ -38,7 +38,7 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
 
         else if (message.find(isMessage) != std::string::npos)
         {
-            bot::respondToMessages(message, botSocket);
+            bot::respondToMessages(message, botSocket, botDetails);
         }
 
         else if (message.empty()){
@@ -167,11 +167,11 @@ std::vector<std::string> bot::getUsersInChannel(const std::string& sender, const
             std::string token;
             std::vector<std::string> tokens;
             while (lineStream >> token) {
-                tokens.push_back(token);
+                tokens.push_back(token);   
             }
 
-            if (tokens.size() >= 4) {
-                std::string username = tokens[4];
+            if (tokens.size() > 7) {
+                std::string username = tokens[7];
                
                 if (username != sender && username != botName) {
                     users.push_back(username);
@@ -186,11 +186,8 @@ std::vector<std::string> bot::getUsersInChannel(const std::string& sender, const
     return users;
 }
 
-std::string bot::getRandomUser(const std::string& sender, const std::vector<std::string>& users) {
+std::string bot::getRandomUser(const std::string& sender, const std::vector<std::string>& users, bot::details botInfo) {
     std::vector<std::string> eligibleUsers;
-
-    std::vector<std::string_view> arguments = {};
-    bot::details botInfo = bot::getDetailsFromArguments(arguments);
 
     for (const std::string& user : users) {
         if (user != sender && user != botInfo.name) {
@@ -208,9 +205,7 @@ std::string bot::getRandomUser(const std::string& sender, const std::vector<std:
     return eligibleUsers[randomIndex];
 }
 
-void bot::respondToMessages(std::string messageRecieved, bot::clientSocket botSocket){
-    std::vector<std::string_view> arguments = {};
-    bot::details botInfo = bot::getDetailsFromArguments(arguments);
+void bot::respondToMessages(std::string messageRecieved, bot::clientSocket botSocket, bot::details botInfo){
     std::vector<std::string> random_facts = {
     "The Planck length, the smallest measurable length in physics, is about 1.6 x 10^-35 meters.",
     "Mozart composed a piece called 'A Musical Joke' (K. 522), which intentionally uses awkward harmonies and rhythms to mock incompetent musicians.",
@@ -273,7 +268,7 @@ void bot::respondToMessages(std::string messageRecieved, bot::clientSocket botSo
                     bot::sendMessage("PRIVMSG # :" + name + " slaps themselves with a large trout for trying to slap someone not in the channel!\r\n", botSocket);
                 }
             } else {
-                std::string randomUser = getRandomUser(name, usersInChannel);
+                std::string randomUser = getRandomUser(name, usersInChannel, botInfo);
                 if (!randomUser.empty()) {
                     bot::sendMessage("PRIVMSG # :" + name + " slaps " + randomUser + " with a large trout!\r\n", botSocket);
                 } else {

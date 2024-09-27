@@ -57,9 +57,9 @@ namespace bot {
     void sendMessage(std::string message, bot::clientSocket botSocket); 
 
     void pong(std::string messageRecieved);
-    void respondToMessages(std::string messageRecieved, bot::clientSocket botSocket);
+    void respondToMessages(std::string messageRecieved, bot::clientSocket botSocket, bot::details botInfo);
     std::vector<std::string> getUsersInChannel(const std::string& sender, const std::string& botName, const std::string& serverResponse);
-    std::string getRandomUser(const std::string& sender, const std::vector<std::string>& users);
+    std::string getRandomUser(const std::string& sender, const std::vector<std::string>& users, bot::details botInfo);
     std::string parseMessage(std::string messageRecieved);
     std::string readName(std::string messageRecieved);
 
