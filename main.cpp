@@ -32,7 +32,6 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
         }
 
         irc::command recievedCommand = irc::parseCommand(message);
-        std::cout << recievedCommand.name << std::endl;
         
         //parseCommand failed
         if(recievedCommand.name.empty()) {
@@ -52,7 +51,6 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
 
 bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& arguments) {
 
-    //TODO: parse arguments
     bot::details botDetails;
     botDetails.channel = "#";
     botDetails.ip = "::1";
@@ -123,14 +121,14 @@ bot::clientSocket bot::openSocket(const bot::details& botDetails) {
         clean_up();
         return botSocks;
     }
-    std::cout << "CONNECTING..." << std::endl;
+    std::cout << "Connecting..." << std::endl;
     if ((status = connect(botSocks, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
         std::cerr << "Connection Failed" << std::endl;
         close_socket(botSocks);
         clean_up();
         return botSocks;
     }
-    std::cout << "CONNECTed!" << std::endl;
+    std::cout << "Connected!" << std::endl;
 
 
     return botSocks;
@@ -174,36 +172,6 @@ std::string bot::readMessage(bot::clientSocket botSocket) {
     return std::string();
 }  
 
-std::vector<std::string> bot::getUsersInChannel(const std::string& sender, const std::string& botName, const std::string& serverResponse) {
-    std::vector<std::string> users;
-    std::istringstream responseStream(serverResponse);
-    std::string line;
-
-    while (std::getline(responseStream, line)) {
-        if (line.find(" 352 ") != std::string::npos) {
-            std::istringstream lineStream(line);
-            std::string token;
-            std::vector<std::string> tokens;
-            while (lineStream >> token) {
-                tokens.push_back(token);   
-            }
-
-            if (tokens.size() > 7) {
-                std::string username = tokens[7];
-               
-                if (username != sender && username != botName) {
-                    users.push_back(username);
-                }
-            }
-        } else if (line.find(" 315 ") != std::string::npos) {
-            // No more users to parse in channel
-            break;
-        }
-    }
-
-    return users;
-}
-
 std::string bot::getRandomUser(const std::string& sender, bot::details botInfo) {
     std::vector<std::string> eligibleUsers;
 
@@ -219,110 +187,6 @@ std::string bot::getRandomUser(const std::string& sender, bot::details botInfo) 
 
     return eligibleUsers[0];
 }
-/*
-void bot::respondToMessages(std::string messageRecieved, bot::clientSocket botSocket, bot::details botInfo){
-
-    std::string name, message; 
-
-    std::cout << messageRecieved << std::endl;
-
-    message = bot::parseMessage(messageRecieved);
-    name = bot::readName(messageRecieved);
-
-    std::cout << name << message << std::endl;
-
-    bot::sendMessage("WHO #\r\n",botSocket);
-
-    std::string serverResponse = bot::readMessage(botSocket);
-
-    if (!message.empty() && message[0] == '!') {
-        std::istringstream iss(message);
-        std::random_device rand;
-        std::string command;
-        iss >> command;
-
-        if (command == "!hello") {
-
-            std::string message = "PRIVMSG # :Hello, " + name + " :" +  + "\r\n";
-            bot::sendMessage(message,botSocket);
-        }
-        else if (command == "!slap") {
-            std::vector<std::string> recipients;
-            std::string recipient;
-
-            iss >> recipient;
-
-            std::vector<std::string> usersInChannel = getUsersInChannel(name, std::string{botInfo.name}, serverResponse);
-
-            // if (usersInChannel.empty()) {
-            //     std::cout << "No users in the channel." << std::endl;
-            // } else {
-            //     std::cout << "Users in the channel:" << std::endl;
-
-            //     for (const std::string& user : usersInChannel) {
-            //         std::cout << user << std::endl;
-            //     }
-            // }
-
-            if (!recipient.empty()) {
-                if (std::find(usersInChannel.begin(), usersInChannel.end(), recipient) != usersInChannel.end()) {
-                    bot::sendMessage("PRIVMSG # :" + name + " slaps " + recipient + " with a large trout!\r\n", botSocket);
-                } else {
-                    bot::sendMessage("PRIVMSG # :" + name + " slaps themselves with a large trout for trying to slap someone not in the channel!\r\n", botSocket);
-                }
-            } else {
-                std::string randomUser = getRandomUser(name, usersInChannel, botInfo);
-                if (!randomUser.empty()) {
-                    bot::sendMessage("PRIVMSG # :" + name + " slaps " + randomUser + " with a large trout!\r\n", botSocket);
-                } else {
-                    bot::sendMessage("PRIVMSG # :There's no one to slap in the channel!\r\n", botSocket);
-                }
-            }
-        }
-    }
-        
-}
-*/
-
-std::string bot::parseMessage(std::string messageRecieved){
-
-   std::string delimiter = "# :";
-
-        size_t pos = messageRecieved.find(delimiter);
-
-    if (pos != std::string::npos)
-    {
-        pos += delimiter.length();
-
-        std::string message = messageRecieved.substr(pos);
-
-        size_t first = message.find_first_not_of(' ');
-
-            if (first != std::string::npos)
-            {
-                message = message.substr(first);
-                return message;
-            }
-    }
-
-    return "error";
-}
-
-std::string bot::readName(std::string messageRecieved){
-
-    std::regex pattern(":([^!]+)!");
-    std::smatch match;
-
-    if(std::regex_search(messageRecieved, match, pattern)){
-        std::string name = match[1];
-        return name;
-    }else{
-        std::cout << "couldnt find name " << std::endl;
-    }
-
-    return "error";
-
-}
 
 void bot::sendMessage(std::string message, bot::clientSocket botSocket) {
     if (bot::isAlive){
@@ -333,7 +197,7 @@ void bot::sendMessage(std::string message, bot::clientSocket botSocket) {
 /*IDK*/
 void bot::sendInitalMessages(bot::clientSocket botSocks, bot::details botDetails) {
     std::string initialMessage1 = "NICK " + std::string(botDetails.name) + "\r\n";
-    std::string initialMessage2 = "USER " + std::string(botDetails.name) + " 0 * :Gamer\r\n";
+    std::string initialMessage2 = "USER " + std::string(botDetails.name) + " 0 * :"+std::string(botDetails.name)+"\r\n";
     std::string initialMessage3 = "JOIN #\r\n";
 
 
@@ -447,11 +311,6 @@ void bot::handleUserCommand(std::string nickname, std::string username, std::str
     if(arguments[0] == "PRIVMSG") 
     {
         std::string text = arguments[2];
-
-        std::cout << "Users in channel ";
-        for(std::string user : bot::usersInBotChannel) {
-            std::cout << user << ", ";
-        }
         bool isDm = (channel == botDetails.name);
         respondToPrivmsg(nickname, channel, text, isDm, botDetails, botSocket);
     }
@@ -508,7 +367,7 @@ void bot::handleCommand(irc::command commandToHandle, bot::details botDetails, b
     } 
     else if (commandToHandle.name == "PING") 
     {
-        std::cout << "PING" << std::endl;
+        //std::cout << "PING" << std::endl;
         std::string raw = commandToHandle.raw;
         raw[1] = 'O';
         raw += "\r\n";
