@@ -10,10 +10,13 @@
 #include <algorithm>
 #include <sstream>
 #include <vector>
-#include <random>
 #include <cstdlib>
 #include <ctime>
 #include <regex>
+#include <unordered_set>
+#include <irc.hpp>
+#include <irc_numberic_replies.hpp>
+#include <util.hpp>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -59,7 +62,7 @@ namespace bot {
     void pong(std::string messageRecieved);
     void respondToMessages(std::string messageRecieved, bot::clientSocket botSocket, bot::details botInfo);
     std::vector<std::string> getUsersInChannel(const std::string& sender, const std::string& botName, const std::string& serverResponse);
-    std::string getRandomUser(const std::string& sender, const std::vector<std::string>& users, bot::details botInfo);
+    std::string getRandomUser(const std::string& sender, bot::details botInfo);
     std::string parseMessage(std::string messageRecieved);
     std::string readName(std::string messageRecieved);
 
@@ -67,5 +70,12 @@ namespace bot {
 
     void sendInitalMessages(bot::clientSocket botSocket, bot::details botDetails);
 
+    void handleCommand(irc::command commandToHandle, bot::details botDetails, bot::clientSocket botSocket);
+    void handleUserCommand(std::string nickname, std::string username, std::string ip, std::vector<std::string> arguments, bot::clientSocket botSocket,  bot::details botDetails);
+    void respondToPrivmsg(std::string nickname, std::string channel, std::string text, bool isDm, bot::details botDetails, bot::clientSocket botSocket);
+    void handleServerCommand(std::string hostname, std::vector<std::string> arguments);
+
     extern bool isAlive;
+    extern std::unordered_set<std::string> usersInBotChannel;
+
 }
