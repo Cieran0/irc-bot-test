@@ -31,14 +31,6 @@
 
 int main(int argc, const char** argv);
 
-extern std::mutex readLock;
-extern std::queue <std::string>readMessages;
-extern std::mutex sendLock;
-extern std::queue <std::string>sendMessages;
-extern std::thread readThread;
-extern std::thread writeThread;
-
-
 namespace bot {
 
     #ifdef _WIN32
@@ -57,22 +49,21 @@ namespace bot {
     };
 
     int main(const std::string_view& program, const std::vector<std::string_view>& arguments);
+
     bot::details getDetailsFromArguments(const std::vector<std::string_view>& arguments);
     bot::clientSocket openSocket(const bot::details& botDetails);
-    void startThreads(bot::clientSocket botSocket);
-    void readMessage(bot::clientSocket botSocket);
-    void writeMessage(bot::clientSocket botSocket); 
-    void addToSendQueue(std::string stringToAdd);
+
+    std::string readMessage(bot::clientSocket botSocket);
+    void sendMessage(std::string message, bot::clientSocket botSocket); 
+
     void pong(std::string messageRecieved);
-    void respondToMessages(std::string messageRecieved);
+    void respondToMessages(std::string messageRecieved, bot::clientSocket botSocket);
     std::vector<std::string> getUsersInChannel(const std::string& sender, const std::string& botName, const std::string& serverResponse);
     std::string getRandomUser(const std::string& sender, const std::vector<std::string>& users);
     std::string parseMessage(std::string messageRecieved);
     std::string readName(std::string messageRecieved);
-    std::string readFromQueue();
-    void die();
 
-    /*IDK?*/
+    void die();
 
     void sendInitalMessages(bot::clientSocket botSocket, bot::details botDetails);
 

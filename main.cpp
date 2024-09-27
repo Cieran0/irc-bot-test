@@ -10,15 +10,6 @@ int main(int argc, const char** argv) {
     return bot::main(std::string_view(argv[0]), args);
 }
 
-std::mutex readLock;
-std::queue <std::string>readMessages;
-
-std::mutex sendLock;
-std::queue <std::string>sendMessages;
-
-std::thread readThread;
-std::thread writeThread;
-
 bool bot::isAlive = false;
 /*
     Avoid C style main
@@ -31,24 +22,23 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
     //TODO: HANDLE ERRORS
     bot::clientSocket botSocket = bot::openSocket(botDetails);
 
+    bot::isAlive = true;
     bot::sendInitalMessages(botSocket, botDetails);
 
-    bot::startThreads(botSocket);
-
     while (bot::isAlive){
-        std::string message = readFromQueue();
+        std::string message = bot::readMessage(botSocket);
         std::string isPing = "PING";
         std::string isMessage = "PRIVMSG";
 
         if (message.find(isPing) != std::string::npos)
         {
             std::cout << "PONG" << std::endl;
-            bot::addToSendQueue("PONG :DESKTOP-JPO54SA.wireless.dundee.ac.uk\r\n"); 
+            bot::sendMessage("PONG :DESKTOP-JPO54SA.wireless.dundee.ac.uk\r\n", botSocket); 
         }
 
         else if (message.find(isMessage) != std::string::npos)
         {
-            bot::respondToMessages(message);
+            bot::respondToMessages(message, botSocket);
         }
 
         else if (message.empty()){
@@ -56,10 +46,6 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
         }
     }
     
-    if(readThread.joinable())
-        readThread.join();
-    if(writeThread.joinable())
-        writeThread.join();
     return 0;
 }
 
@@ -150,17 +136,6 @@ bot::clientSocket bot::openSocket(const bot::details& botDetails) {
     return botSocks;
 }
 
-void bot::startThreads(bot::clientSocket botSocket) {
-
-    bot::isAlive = true;
-
-    readThread = std::thread(readMessage, botSocket);
-    writeThread = std::thread(writeMessage, botSocket);
-
-    readThread.detach();
-    writeThread.detach();
-
-}   
 
 void bot::pong(std::string messageRecieved){
 
@@ -168,25 +143,17 @@ void bot::pong(std::string messageRecieved){
 
 }
 
-void bot::readMessage(bot::clientSocket botSocket) {
-    int valread;
-
-    while (bot::isAlive)
-    {
-        char buffer[1024] = { 0 };
-        valread = recv(botSocket, buffer, 1024 -1, 0);
+std::string bot::readMessage(bot::clientSocket botSocket) {
+    char buffer[1024] = { 0 };
+    int valread = recv(botSocket, buffer, 1024 -1, 0);
         
-           if (valread <= 0 )
-            {
-                bot::die();
-                break;
-            }  
-
-        readLock.lock();
-        readMessages.push(std::string(buffer));
-        readLock.unlock();
-    }
+    if (valread <= 0 )
+    {
+        bot::die();
+        return std::string();
+    }  
     
+    return std::string(buffer);
 }  
 
 std::vector<std::string> bot::getUsersInChannel(const std::string& sender, const std::string& botName, const std::string& serverResponse) {
@@ -241,7 +208,7 @@ std::string bot::getRandomUser(const std::string& sender, const std::vector<std:
     return eligibleUsers[randomIndex];
 }
 
-void bot::respondToMessages(std::string messageRecieved){
+void bot::respondToMessages(std::string messageRecieved, bot::clientSocket botSocket){
     std::vector<std::string_view> arguments = {};
     bot::details botInfo = bot::getDetailsFromArguments(arguments);
     std::vector<std::string> random_facts = {
@@ -252,8 +219,8 @@ void bot::respondToMessages(std::string messageRecieved){
     "Wombat poop is cube-shaped to help it stack neatly and mark territory.",
     "Sharks existed before trees. Sharks have been around for more than 400 million years, while trees appeared around 350 million years ago.",
     "Octopuses have three hearts. Two pump blood to the gills, and one pumps it to the rest of the body.",
-    "The first oranges weren’t orange. They were green and came from Southeast Asia, where they were a cross between a pomelo and a mandarin.",
-    "There’s a species of jellyfish, Turritopsis dohrnii, that is effectively immortal because it can revert back to its juvenile form after reaching adulthood.",
+    "The first oranges weren't orange. They were green and came from Southeast Asia, where they were a cross between a pomelo and a mandarin.",
+    "There's a species of jellyfish, Turritopsis dohrnii, that is effectively immortal because it can revert back to its juvenile form after reaching adulthood.",
     "The Eiffel Tower can grow up to 6 inches taller in the summer due to the expansion of the metal when heated."
     };
 
@@ -266,9 +233,9 @@ void bot::respondToMessages(std::string messageRecieved){
 
     std::cout << name << message << std::endl;
 
-    bot::addToSendQueue("WHO #\r\n");
+    bot::sendMessage("WHO #\r\n",botSocket);
 
-    std::string serverResponse = bot::readFromQueue();
+    std::string serverResponse = bot::readMessage(botSocket);
 
     if (!message.empty() && message[0] == '!') {
         std::istringstream iss(message);
@@ -277,10 +244,9 @@ void bot::respondToMessages(std::string messageRecieved){
         iss >> command;
 
         if (command == "!hello") {
-            std::mt19937 gen(rand);
             std::uniform_int_distribution<> dis(0, random_facts.size() - 1);
             std::string message = "PRIVMSG # :Hello, " + name + " :" + random_facts[dis(rand)] + "\r\n";
-            bot::addToSendQueue(message);
+            bot::sendMessage(message,botSocket);
         }
         else if (command == "!slap") {
             std::vector<std::string> recipients;
@@ -302,16 +268,16 @@ void bot::respondToMessages(std::string messageRecieved){
 
             if (!recipient.empty()) {
                 if (std::find(usersInChannel.begin(), usersInChannel.end(), recipient) != usersInChannel.end()) {
-                    bot::addToSendQueue("PRIVMSG # :" + name + " slaps " + recipient + " with a large trout!\r\n");
+                    bot::sendMessage("PRIVMSG # :" + name + " slaps " + recipient + " with a large trout!\r\n", botSocket);
                 } else {
-                    bot::addToSendQueue("PRIVMSG # :" + name + " slaps themselves with a large trout for trying to slap someone not in the channel!\r\n");
+                    bot::sendMessage("PRIVMSG # :" + name + " slaps themselves with a large trout for trying to slap someone not in the channel!\r\n", botSocket);
                 }
             } else {
                 std::string randomUser = getRandomUser(name, usersInChannel);
                 if (!randomUser.empty()) {
-                    bot::addToSendQueue("PRIVMSG # :" + name + " slaps " + randomUser + " with a large trout!\r\n");
+                    bot::sendMessage("PRIVMSG # :" + name + " slaps " + randomUser + " with a large trout!\r\n", botSocket);
                 } else {
-                    bot::addToSendQueue("PRIVMSG # :There's no one to slap in the channel!\r\n");
+                    bot::sendMessage("PRIVMSG # :There's no one to slap in the channel!\r\n", botSocket);
                 }
             }
         }
@@ -359,32 +325,10 @@ std::string bot::readName(std::string messageRecieved){
 
 }
 
-void bot::writeMessage(bot::clientSocket botSocket) {
-
-
-    while (bot::isAlive){
-
-    std::string localString;
-
-        sendLock.lock();
-
-            if (!sendMessages.empty())
-            {
-                localString = sendMessages.front();
-                sendMessages.pop();
-            }
-
-        sendLock.unlock();
-
-        if (localString.empty())
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
-            continue;
-        }
-        send(botSocket, localString.c_str(),localString.length(), 0);
-        
+void bot::sendMessage(std::string message, bot::clientSocket botSocket) {
+    if (bot::isAlive){
+        send(botSocket, message.c_str(),message.length(), 0);
     }
-    
 }  
 
 /*IDK*/
@@ -395,38 +339,10 @@ void bot::sendInitalMessages(bot::clientSocket botSocks, bot::details botDetails
 
 
 
-    bot::addToSendQueue(initialMessage1);
-    bot::addToSendQueue(initialMessage2);
-    bot::addToSendQueue(initialMessage3);
+    bot::sendMessage(initialMessage1,botSocks);
+    bot::sendMessage(initialMessage2,botSocks);
+    bot::sendMessage(initialMessage3,botSocks);
 
-}
-
-void bot::addToSendQueue(std::string stringToAdd){
-       sendLock.lock();
-       sendMessages.push(stringToAdd);
-       sendLock.unlock();
-}
-
-std::string bot::readFromQueue(){
-
-    std::string storedMessage;
-
-    while (storedMessage.empty() && bot::isAlive)
-    {
-        readLock.lock();
-        if(!readMessages.empty()){
-            storedMessage = readMessages.front();
-            readMessages.pop();
-        }
-        readLock.unlock();
-
-        if(storedMessage.empty()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        }
-    }
-    
-
-    return storedMessage;
 }
 
 void bot::die() {
