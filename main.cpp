@@ -198,9 +198,7 @@ void bot::sendMessage(std::string message, bot::clientSocket botSocket) {
 void bot::sendInitalMessages(bot::clientSocket botSocks, bot::details botDetails) {
     std::string initialMessage1 = "NICK " + std::string(botDetails.name) + "\r\n";
     std::string initialMessage2 = "USER " + std::string(botDetails.name) + " 0 * :"+std::string(botDetails.name)+"\r\n";
-    std::string initialMessage3 = "JOIN #\r\n";
-
-
+    std::string initialMessage3 = "JOIN #" + std::string(botDetails.channel) + "\r\n";
 
     bot::sendMessage(initialMessage1,botSocks);
     bot::sendMessage(initialMessage2,botSocks);
