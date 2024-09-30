@@ -295,7 +295,10 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
             } else {
                 responce = "*Slapped " + nickname + " with a trout* since " + user + " couldn't be found!";
             }
+        } else if (text == "!hello") {
+            responce = "Hey, " + nickname;
         }
+ 
         
         if(responce.empty())
             return;
