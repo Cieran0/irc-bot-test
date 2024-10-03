@@ -7,8 +7,11 @@
 namespace irc {
     struct command
     {
+        // raw for entire message unparsed I assume 
         std::string raw;
+        // Name used for storing a users name
         std::string name;
+        // arguments used for arguments in an IRC message
         std::vector<std::string> arguments;
     };
 

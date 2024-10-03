@@ -134,13 +134,6 @@ bot::clientSocket bot::openSocket(const bot::details& botDetails) {
     return botSocks;
 }
 
-
-void bot::pong(std::string messageRecieved){
-
-
-
-}
-
 std::queue<std::string> readQueue;
  
 std::string bot::readMessage(bot::clientSocket botSocket) {

@@ -12,7 +12,7 @@ irc::command irc::parseCommand(const std::string& message) {
         return parsedCommand; 
     }
     parsedCommand.name = message.substr(0, name_end);
-    // std::cout << "[\n" << parsedCommand.name << std::endl;
+    std::cout << "[\n" << parsedCommand.name << std::endl;
 
     size_t after_name = name_end + 1;
     std::string argsString = message.substr(after_name);
