@@ -52,7 +52,7 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
 bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& arguments) {
 
     bot::details botDetails;
-    botDetails.channel = "#";
+    botDetails.channel = "";
     botDetails.ip = "::1";
     botDetails.name = "slap_bot";
     botDetails.port = "6667";
@@ -265,10 +265,24 @@ std::string getRandomSentence() {
 }
 
 void bot::respondToPrivmsg(std::string nickname, std::string channel, std::string text, bool isDm, bot::details botDetails, bot::clientSocket botSocket) {
-    if(isDm) {
+    
+    std::cout << "text is: " << text << std::endl;
+    std::cout << "nickname is: " << nickname << std::endl;
+
+     if (text.find("PRIVMSG") != std::string::npos) {
+       
+        std::cout << "Received a PRIVMSG command." << std::endl;
+        bot::sendMessage("PRIVMSG " + nickname + " :"+getRandomSentence()+"\r\n", botSocket); 
+
+    }
+
+
+    /*if(isDm) {
         bot::sendMessage("PRIVMSG " + nickname + " :"+getRandomSentence()+"\r\n", botSocket); //FIXME: make random sentence
         return;
-    }
+    } */
+
+    
     if(text[0] == '!') {
         std::string responce;
 

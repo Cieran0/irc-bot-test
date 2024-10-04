@@ -6,19 +6,34 @@
 irc::command irc::parseCommand(const std::string& message) {
     command parsedCommand;
     parsedCommand.raw = message;
+
+    //std::cout << "[\nparsedCommand.raw: " << message << std::endl;
+
     size_t name_end = message.find_first_of(' ');
+
+    //std::cout << "name_end: " << name_end << std::endl;
 
     if (name_end == std::string::npos) {
         return parsedCommand; 
     }
     parsedCommand.name = message.substr(0, name_end);
-    std::cout << "[\n" << parsedCommand.name << std::endl;
+
+    //std::cout << "parsedCommand.name: " << parsedCommand.name << std::endl;
 
     size_t after_name = name_end + 1;
+
+    //std::cout << "afer_name: " << after_name << std::endl;
+
     std::string argsString = message.substr(after_name);
+
+    //std::cout << "argsString: " << argsString << std::endl;
+
     size_t endOfSpaceSeperated = argsString.find_first_of(':');
 
     std::string last_args;
+
+    //std::cout << "last_args: " << last_args << std::endl;
+
     if (endOfSpaceSeperated != std::string::npos) {
         last_args = argsString.substr(endOfSpaceSeperated + 1);
         argsString = argsString.substr(0, endOfSpaceSeperated);
@@ -42,6 +57,7 @@ irc::command irc::parseCommand(const std::string& message) {
     // }
     
     // std::cout << "]" << std::endl;
+
     return parsedCommand;
 }
 
