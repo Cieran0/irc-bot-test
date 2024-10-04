@@ -276,7 +276,6 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
 
     }
 
-
     /*if(isDm) {
         bot::sendMessage("PRIVMSG " + nickname + " :"+getRandomSentence()+"\r\n", botSocket); //FIXME: make random sentence
         return;
