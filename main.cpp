@@ -285,7 +285,8 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
             } else {
                 responce = "*Slapped " + user + " with a trout*";
             }
-        } else if (text.starts_with("!slap ")) {
+        } 
+        else if (text.starts_with("!slap ")) {
             std::string user = split_string(text, " ", true)[1];
             if(bot::usersInBotChannel.find(user) != bot::usersInBotChannel.end()) {
                 responce = "*Slapped " + user + " with a trout*";
@@ -294,6 +295,13 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
             }
         } else if (text == "!hello") {
             responce = "Hey, " + nickname;
+        }
+
+        else if(text.starts_with("!topic ")){
+            std::string setTopic;
+
+            setTopic = text.substr(7);
+            bot::sendMessage("TOPIC " + channel + " :" + setTopic +"\r\n", botSocket);
         }
  
         
@@ -336,8 +344,8 @@ void bot::handleUserCommand(std::string nickname, std::string username, std::str
             bot::usersInBotChannel.erase(nickname);
         }
     }
-    else if (arguments[0] == "INVITE") {
-
+    else if (arguments[0] == "TOPIC") {
+        
     }
     else 
     {
