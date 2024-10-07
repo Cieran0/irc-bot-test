@@ -269,34 +269,10 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
     std::cout << "text is: " << text << std::endl;
     std::cout << "nickname is: " << nickname << std::endl;
 
-    if (text.find("PRIVMSG") != std::string::npos && text.find("slap_bot") != std::string::npos) {
-        std::cout << "Received a PRIVMSG command." << std::endl;
-        bot::sendMessage("PRIVMSG " + nickname + " :"+getRandomSentence()+"\r\n", botSocket); 
-    }
-
-
-    if (text.find("INVITE") != std::string::npos && text.find("slap_bot") != std::string::npos)
-    {
-        std::string channel;
-
-        size_t hashPos = text.find('#');
-        if (hashPos != std::string::npos)
-        {
-            channel = text.substr(hashPos);
-            std::cout << "channel: " << channel << std::endl;
-            std::cout << "slap_bot invited to channel: " << channel << std::endl;
-        }
-
-        bot::sendMessage("JOIN " + channel + "\r\n", botSocket);
-        std::cout << "Joined channel: " << channel << std::endl;
-        
-    }
-    
-
-    /*if(isDm) {
+    if(isDm) {
         bot::sendMessage("PRIVMSG " + nickname + " :"+getRandomSentence()+"\r\n", botSocket); //FIXME: make random sentence
         return;
-    } */
+    }
 
     
     if(text[0] == '!') {
@@ -359,6 +335,9 @@ void bot::handleUserCommand(std::string nickname, std::string username, std::str
         if(nickname != "stap_bot2") {//FIXME: dont hard code bot name
             bot::usersInBotChannel.erase(nickname);
         }
+    }
+    else if (arguments[0] == "INVITE") {
+
     }
     else 
     {
