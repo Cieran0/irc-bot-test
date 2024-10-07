@@ -269,12 +269,29 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
     std::cout << "text is: " << text << std::endl;
     std::cout << "nickname is: " << nickname << std::endl;
 
-     if (text.find("PRIVMSG") != std::string::npos) {
-       
+    if (text.find("PRIVMSG") != std::string::npos && text.find("slap_bot") != std::string::npos) {
         std::cout << "Received a PRIVMSG command." << std::endl;
         bot::sendMessage("PRIVMSG " + nickname + " :"+getRandomSentence()+"\r\n", botSocket); 
-
     }
+
+
+    if (text.find("INVITE") != std::string::npos && text.find("slap_bot") != std::string::npos)
+    {
+        std::string channel;
+
+        size_t hashPos = text.find('#');
+        if (hashPos != std::string::npos)
+        {
+            channel = text.substr(hashPos);
+            std::cout << "channel: " << channel << std::endl;
+            std::cout << "slap_bot invited to channel: " << channel << std::endl;
+        }
+
+        bot::sendMessage("JOIN " + channel + "\r\n", botSocket);
+        std::cout << "Joined channel: " << channel << std::endl;
+        
+    }
+    
 
     /*if(isDm) {
         bot::sendMessage("PRIVMSG " + nickname + " :"+getRandomSentence()+"\r\n", botSocket); //FIXME: make random sentence
@@ -314,6 +331,8 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
 void bot::handleUserCommand(std::string nickname, std::string username, std::string ip, std::vector<std::string> arguments, bot::clientSocket botSocket, bot::details botDetails) {
 
     std::string channel = arguments[1];
+
+    std::cout << "arguments[0]: " << arguments[0] << std::endl;
     
     if(arguments[0] == "PRIVMSG") 
     {
