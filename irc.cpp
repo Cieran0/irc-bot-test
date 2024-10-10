@@ -4,45 +4,53 @@
 #include <algorithm>
 
 irc::command irc::parse_command(const std::string& message) {
-    command parsedCommand;
-    parsedCommand.raw = message;
+    command parsed_command;
+    parsed_command.raw = message;
 
+    //Name ends at first space
     size_t name_end = message.find_first_of(' ');
 
+    //If name never ends it returns an empty command
     if (name_end == std::string::npos) {
-        return parsedCommand; 
+        return parsed_command; 
     }
-    parsedCommand.name = message.substr(0, name_end);
+
+    parsed_command.name = message.substr(0, name_end);
 
     size_t after_name = name_end + 1;
 
-    std::string argsString = message.substr(after_name);
+    std::string arguments = message.substr(after_name);
 
-    size_t endOfSpaceSeperated = argsString.find_first_of(':');
+    //If it has text e.g :No Topic Set, set it as the last argument
+    size_t end_of_space_seperated = arguments.find_first_of(':');
 
     std::string last_args;
 
-    if (endOfSpaceSeperated != std::string::npos) {
-        last_args = argsString.substr(endOfSpaceSeperated + 1);
-        argsString = argsString.substr(0, endOfSpaceSeperated);
+    if (end_of_space_seperated != std::string::npos) {
+        last_args = arguments.substr(end_of_space_seperated + 1);
+        arguments = arguments.substr(0, end_of_space_seperated);
     }
 
-    std::istringstream iss(argsString);
+    //Get arguments seperated by spaces.
+    std::istringstream iss(arguments);
     std::string arg;
     while (iss >> arg) {
-        parsedCommand.arguments.push_back(arg);
+        parsed_command.arguments.push_back(arg);
     }
-
-
 
     if(!last_args.empty()) {
-        parsedCommand.arguments.push_back(last_args);
+        parsed_command.arguments.push_back(last_args);
     }
 
-    return parsedCommand;
+    return parsed_command;
 }
 
+/*
+    Check if a code is a known irc reply.
+    In form XXX where X is a integer.
+*/
 bool irc::is_known_numeric_reply(const std::string& number) {
+
     if(number.length() != 3)
         return false;
 

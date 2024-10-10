@@ -1,4 +1,4 @@
-#include <bot_new.hpp>
+#include <bot.hpp>
 
 int main(int argc, const char** argv) {
     std::vector<std::string_view> args;

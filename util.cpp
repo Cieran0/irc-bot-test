@@ -1,5 +1,9 @@
 #include <util.hpp>
 
+/*
+    Splits a string, by split_by. 
+    If include_last, includes string after final split_by, even if empty.
+*/
 std::vector<std::string> split_string(const std::string& input, const std::string& split_by, bool include_last) {
     std::string buffer;
     std::vector<std::string> split_strings;
