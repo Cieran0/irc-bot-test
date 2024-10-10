@@ -11,6 +11,7 @@ std::vector<std::string> split_string(const std::string& input, const std::strin
     size_t start = 0;
     size_t end = input.find(split_by);
 
+    //Loop through input until all split_by are found.
     while (end != std::string::npos) {
         buffer = input.substr(start, end - start);
         split_strings.push_back(buffer);

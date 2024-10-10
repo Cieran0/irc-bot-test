@@ -288,8 +288,7 @@ void bot::handle_server_command(std::string hostname, std::vector<std::string> a
         case irc::RPL_MYINFO:
         case irc::ERR_NOMOTD:
         case irc::RPL_LUSERCLIENT:
-
-            //print this
+            //We can ingore all of these
             break;
         case irc::RPL_NAMREPLY: {
             std::string names_raw = arguments.back(); // Extract the raw names string 
@@ -300,7 +299,7 @@ void bot::handle_server_command(std::string hostname, std::vector<std::string> a
             break;
         }
         case irc::RPL_ENDOFNAMES:
-            //ignore, this message indecats the end of the name list
+            //ignore, this message indecates the end of the name list
             break;
         default:
             std::cerr << "Unhandled: " << irc::valid_numeric_replies.find(numeric_reply)->second << std::endl;
@@ -335,6 +334,8 @@ std::string get_random_fact() {
         return "No facts found in the file. ";
     }
 
+
+    //Get random fact from vector
     std::srand(std::time(0));
 
     int random_index = std::rand() % facts.size();
