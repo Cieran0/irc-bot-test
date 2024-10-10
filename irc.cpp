@@ -3,6 +3,10 @@
 #include <iostream>
 #include <algorithm>
 
+
+/*
+    Parses message from server into irc::command
+*/
 irc::command irc::parse_command(const std::string& message) {
     command parsed_command;
     parsed_command.raw = message;
