@@ -17,6 +17,7 @@
 #include <irc.hpp>
 #include <irc_numberic_replies.hpp>
 #include <util.hpp>
+#include <fstream>
 
 #ifdef _WIN32
     #include <winsock2.h>

@@ -7,4 +7,4 @@ else
 endif
 
 all:
-	g++ -std=c++20 *.cpp -Wall $(libs) -o $(output) -Iinclude
+	g++ -std=c++20 *.cpp -Wall $(libs) -o $(output) -Iinclude -static
