@@ -3,7 +3,7 @@
 #include <iostream>
 #include <algorithm>
 
-irc::command irc::parseCommand(const std::string& message) {
+irc::command irc::parse_command(const std::string& message) {
     command parsedCommand;
     parsedCommand.raw = message;
 
@@ -42,7 +42,7 @@ irc::command irc::parseCommand(const std::string& message) {
     return parsedCommand;
 }
 
-bool irc::isKnownNumericReply(const std::string& number) {
+bool irc::is_known_numeric_reply(const std::string& number) {
     if(number.length() != 3)
         return false;
 
@@ -51,7 +51,7 @@ bool irc::isKnownNumericReply(const std::string& number) {
 
     int n = std::stoi(number);
 
-    if(validNumericReplies.find((irc::numeric_reply)n) != validNumericReplies.end())
+    if(valid_numeric_replies.find((irc::numeric_reply)n) != valid_numeric_replies.end())
         return true;
 
     return false;

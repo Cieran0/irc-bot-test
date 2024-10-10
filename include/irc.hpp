@@ -15,7 +15,7 @@ namespace irc {
         std::vector<std::string> arguments;
     };
 
-    irc::command parseCommand(const std::string& message);
+    irc::command parse_command(const std::string& message);
     
-    bool isKnownNumericReply(const std::string& message);
+    bool is_known_numeric_reply(const std::string& message);
 }

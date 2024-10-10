@@ -325,5 +325,5 @@ namespace irc {
 		/*Error sent to any user trying to view or change the user mode for a user other than themselves*/
 		ERR_USERSDONTMATCH = 502, //Format: :<reason>
 	};
-	extern std::unordered_map<irc::numeric_reply,std::string> const validNumericReplies;
+	extern std::unordered_map<irc::numeric_reply,std::string> const valid_numeric_replies;
 }

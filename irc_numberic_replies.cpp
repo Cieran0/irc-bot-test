@@ -4,7 +4,7 @@
 
 //Generated from https://www.alien.net.au/irc/irc2numerics.html
 namespace irc {
-	std::unordered_map<irc::numeric_reply, std::string> const validNumericReplies = {
+	std::unordered_map<irc::numeric_reply, std::string> const valid_numeric_replies = {
 		DEFINE_ENUM_PAIR(RPL_WELCOME),
 		DEFINE_ENUM_PAIR(RPL_YOURHOST),
 		DEFINE_ENUM_PAIR(RPL_CREATED),

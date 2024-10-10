@@ -12,40 +12,39 @@ int main(int argc, const char** argv) {
 }
 
 //Global variables to use for the bots state and to track users in the channel
-bool bot::isAlive = false;
-std::unordered_set<std::string> bot::usersInBotChannel;
-
+bool bot::is_alive = false;
+std::unordered_set<std::string> bot::users_in_bot_channel;
 
 //main function for the bot
 int bot::main(const std::string_view& program, const std::vector<std::string_view>& arguments) {
     
     //get the bots details 
-    bot::details botDetails = bot::getDetailsFromArguments(arguments);
+    bot::details bot_details = bot::get_details_from_arguments(arguments);
     
     //Open the socket connection to server
-    bot::clientSocket botSocket = bot::openSocket(botDetails);
+    bot::clientSocket bot_socket = bot::open_socket(bot_details);
 
-    bot::isAlive = true;
-    bot::sendInitalMessages(botSocket, botDetails); //send initial IRC messages to the server 
+    bot::is_alive = true;
+    bot::send_inital_message(bot_socket, bot_details); //send initial IRC messages to the server 
 
     //main loop to read and handle the messages on the server
-    while (bot::isAlive){
-        std::string message = bot::readMessage(botSocket);
+    while (bot::is_alive){
+        std::string message = bot::read_message(bot_socket);
 
         if (message.empty()){
-            continue; //Should only happen if !bot::isAlive
+            continue; //Should only happen if !bot::is_alive
         }
 
-        irc::command recievedCommand = irc::parseCommand(message); //Parse the message recieved into an IRC command
+        irc::command recieved_command = irc::parse_command(message); //Parse the message recieved into an IRC command
         
         //Handle failed parsing 
-        if(recievedCommand.name.empty()) {
+        if(recieved_command.name.empty()) {
             std::cerr << "Failed to parse: [" << message << "]" << std::endl;
-            return -10;
+            return -1;
         }
 
         //Handle recieved command
-        bot::handleCommand(recievedCommand, botDetails, botSocket);
+        bot::handle_command(recieved_command, bot_details, bot_socket);
 
     }
     
@@ -53,13 +52,13 @@ int bot::main(const std::string_view& program, const std::vector<std::string_vie
 }
 
 //Function that recieves details from the command-line arguments
-bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& arguments) {
+bot::details bot::get_details_from_arguments(const std::vector<std::string_view>& arguments) {
 
-    bot::details botDetails; //Acts as a botDetails object that stores details of the bot
-    botDetails.channel = "#"; //Default channel
-    botDetails.ip = "::1"; //Default IP
-    botDetails.name = "slap_bot"; // Default name 
-    botDetails.port = "6667"; // Default port for the IRC 
+    bot::details bot_details; //Acts as a bot_details object that stores details of the bot
+    bot_details.channel = "#"; //Default channel
+    bot_details.ip = "::1"; //Default IP
+    bot_details.name = "slap_bot"; // Default name 
+    bot_details.port = "6667"; // Default port for the IRC 
 
     // Process command line arguments using pairs (the option and then its value)
     for (size_t i = 0; i < arguments.size(); i+=2)
@@ -71,7 +70,7 @@ bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& a
 
         // handle the hosst argument
         else if(arguments[i] == "--host") {
-            botDetails.ip = arguments[i+1];
+            bot_details.ip = arguments[i+1];
             
         } 
 
@@ -84,7 +83,7 @@ bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& a
             // Checks if next argument is another option, suggesting no value was given
             if (arguments[i+1].substr(0,2) == "--")
             {
-                std::cout << "No port number provided. " << std:: endl;
+                std::cerr << "No port number provided. " << std:: endl;
                 exit(-1);
             }
             
@@ -96,7 +95,7 @@ bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& a
                 }
             }
 
-            botDetails.port = port;
+            bot_details.port = port;
         }
 
         // Handle name argument
@@ -105,28 +104,28 @@ bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& a
 
             // Checks if next argument is another option, suggesting no value was given
             if (arguments[i+1].substr(0, 2) == "--") {
-            std::cout << "Error: No name provided after --name. " << std::endl;
+            std::cerr << "Error: No name provided after --name. " << std::endl;
             exit(-1);  
             }
             
             // Checks after a value to make sure that the next argument is another option.
             //If its not another option then the user has put a space in their bot name 
             else if (arguments[i+2].substr(0, 2) != "--") {
-            std::cout << "Error: There are spaces in your name. " << std::endl;
+            std::cerr << "Error: There are spaces in your name. " << std::endl;
             exit(-1);  
             }
 
-            botDetails.name = arguments[i+1];
+            bot_details.name = arguments[i+1];
         }
 
         // Handles the channel argument
         else if (arguments[i] == "--channel")
         {
-            botDetails.channel = arguments[i+1];
+            bot_details.channel = arguments[i+1];
 
             // Ensures teh channel name is formatted with a '#' at the start
-            if(botDetails.channel[0] != '#'){
-                std::cout << "Channel name formatted incorrectly. Include # before channel names. " << std::endl;
+            if(bot_details.channel[0] != '#'){
+                std::cerr << "Channel name formatted incorrectly. Include # before channel names. " << std::endl;
                 exit(-1);
             }
         }
@@ -138,19 +137,19 @@ bot::details bot::getDetailsFromArguments(const std::vector<std::string_view>& a
         }
     }
     
-    return botDetails; // Returns the bot details after they're populated
+    return bot_details; // Returns the bot details after they're populated
 }
 
 // Function to open a socket connection to the IRC server
-bot::clientSocket bot::openSocket(const bot::details& botDetails) {
-    bot::clientSocket botSocks = -1; // Initialize the socket
+bot::clientSocket bot::open_socket(const bot::details& bot_details) {
+    bot::clientSocket bot_socket = -1; // Initialize the socket
 
 #ifdef _WIN32
     // Windows specific socket initialization
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         std::cerr << "WSAStartup failed." << std::endl;
-        return botSocks; // Return failure
+        return bot_socket; // Return failure
     }
 #endif
 
@@ -158,54 +157,54 @@ bot::clientSocket bot::openSocket(const bot::details& botDetails) {
     struct sockaddr_in6 serv_addr; // Structure for IPv6 addresses
 
     // Create the socket
-    if ((botSocks = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
+    if ((bot_socket = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
         std::cerr << "Socket creation error" << std::endl;
         clean_up(); 
-        return botSocks; // Returns a failure 
+        return bot_socket; // Returns a failure 
     }
 
     memset(&serv_addr, 0, sizeof(serv_addr)); // Clears the previously created struct
     serv_addr.sin6_family = AF_INET6; // Sets to IPv6 to avoid IPv4 default
-    serv_addr.sin6_port = htons(std::stoi(std::string(botDetails.port))); // Sets the port
+    serv_addr.sin6_port = htons(std::stoi(std::string(bot_details.port))); // Sets the port
 
     // Converts IP address from text to binary 
-    if (inet_pton(AF_INET6, std::string(botDetails.ip).c_str(), &serv_addr.sin6_addr) <= 0) {
+    if (inet_pton(AF_INET6, std::string(bot_details.ip).c_str(), &serv_addr.sin6_addr) <= 0) {
         std::cerr << "Invalid address/ Address not supported" << std::endl; 
         clean_up(); 
-        return botSocks; 
+        return bot_socket; 
     }
     std::cout << "Connecting..." << std::endl; 
 
-    if ((status = connect(botSocks, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
+    if ((status = connect(bot_socket, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0) {
         std::cerr << "Connection Failed" << std::endl;
-        close_socket(botSocks); 
+        close_socket(bot_socket); 
         clean_up(); 
-        return botSocks;
+        return bot_socket;
     }
     std::cout << "Connected!" << std::endl; // Print statement for a successful connection
 
 
-    return botSocks;// Return the valid socket
+    return bot_socket;// Return the valid socket
 }
 
 // Queue to store recieved messages from the server 
-std::queue<std::string> readQueue;
+std::queue<std::string> read_queue;
  
 // Funciton to read a message from the socket  
-std::string bot::readMessage(bot::clientSocket botSocket) {
+std::string bot::read_message(bot::clientSocket bot_socket) {
 
     // Check to see if there are messages currently stored in the queue
-    if(!readQueue.empty()) {
-        std::string out = readQueue.front(); // Get the top message of the queue
-        readQueue.pop(); // Remove it from the queue 
+    if(!read_queue.empty()) {
+        std::string out = read_queue.front(); // Get the top message of the queue
+        read_queue.pop(); // Remove it from the queue 
         return out; // Return the message 
     }
     
     char buffer[1024] = { 0 }; // Buffer to store the message 
-    int valread = recv(botSocket, buffer, 1024 -1, 0); // Read from the socket 
+    int number_of_bytes_read = recv(bot_socket, buffer, 1024 -1, 0); // Read from the socket 
         
     // Check for errors of disconnection from the server    
-    if (valread <= 0 )
+    if (number_of_bytes_read <= 0 )
     {
         bot::die(); // Terminate the bot
         return std::string(); // Return an empty string 
@@ -213,82 +212,75 @@ std::string bot::readMessage(bot::clientSocket botSocket) {
     
     std::string messages = std::string(buffer); // Convert the buffer to a string 
 
-    // Split the messages and pass them to the readQueue
+    // Split the messages and pass them to the read_queue
     for(const std::string& s: split_string(messages,"\r\n",false)) {
-        readQueue.push(s);
+        read_queue.push(s);
     }
 
-    // Return the first message from the queue
-    if(!readQueue.empty()) {
-        std::string out = readQueue.front();
-        readQueue.pop();
-        return out;
-    }
-    return std::string(); // Return an empty string if there is no message
+    return bot::read_message(bot_socket);
 }  
 
 // Function to get a random user to slap
-std::string bot::getRandomUser(const std::string& sender, bot::details botInfo) {
-    std::vector<std::string> eligibleUsers; // Vector to store a valid user for slapping 
+std::string bot::get_random_user(const std::string& sender, bot::details botInfo) {
+    std::vector<std::string> eligible_users; // Vector to store a valid user for slapping 
 
     // Populate valid users with the set of users in the channel
-    for (const std::string& user : bot::usersInBotChannel) {
+    for (const std::string& user : bot::users_in_bot_channel) {
         if (user != sender && user != botInfo.name) {
-            eligibleUsers.push_back(user);
+            eligible_users.push_back(user);
         }
     }
 
     // If there are not enough users in the server to slap, an empty string is returned
-    if (eligibleUsers.empty()) {
+    if (eligible_users.empty()) {
         return std::string();
     }
 
     // First eligible user is returned to be slapped
-    return eligibleUsers[0];
+    return eligible_users[0];
 }
 
 // function that allows a message to be sent to the IRC server 
-void bot::sendMessage(std::string message, bot::clientSocket botSocket) {
+void bot::send_message(std::string message, bot::clientSocket bot_socket) {
     // Checks to see if bot is alive first 
-    if (bot::isAlive){
+    if (bot::is_alive){
         // Uses the socket to send a message 
-        send(botSocket, message.c_str(),message.length(), 0);
+        send(bot_socket, message.c_str(),message.length(), 0);
     }
 }  
 
 // Funciton to send the IRC connection message for the bot 
-void bot::sendInitalMessages(bot::clientSocket botSocks, bot::details botDetails) {
-    std::string initialMessage1 = "NICK " + std::string(botDetails.name) + "\r\n";
-    std::string initialMessage2 = "USER " + std::string(botDetails.name) + " 0 * :"+std::string(botDetails.name)+"\r\n";
-    std::string initialMessage3 = "JOIN " + std::string(botDetails.channel) + "\r\n";
+void bot::send_inital_message(bot::clientSocket bot_socket, bot::details bot_details) {
+    std::string nick_message = "NICK " + std::string(bot_details.name) + "\r\n";
+    std::string user_message = "USER " + std::string(bot_details.name) + " 0 * :"+std::string(bot_details.name)+"\r\n";
+    std::string join_message = "JOIN " + std::string(bot_details.channel) + "\r\n";
 
-    bot::sendMessage(initialMessage1,botSocks);
-    bot::sendMessage(initialMessage2,botSocks);
-    bot::sendMessage(initialMessage3,botSocks);
+    bot::send_message(nick_message,bot_socket);
+    bot::send_message(user_message,bot_socket);
+    bot::send_message(join_message,bot_socket);
 
 }
 
 // Function that terminates the bots connection
 void bot::die() {
-    std::cout << "Disconnect from server" << std::endl;
-    bot::isAlive = false;
+    std::cerr << "Disconnect from server" << std::endl;
+    bot::is_alive = false;
 }
 
 // Function to process the commands read from the server 
-void bot::handleServerCommand(std::string hostname, std::vector<std::string> arguments) {
+void bot::handle_server_command(std::string hostname, std::vector<std::string> arguments) {
 
-    irc::numeric_reply numericReply;
+    irc::numeric_reply numeric_reply;
 
     // If the reply is unknown, error is logged and the bot is exited
-    if(!irc::isKnownNumericReply(arguments[0])) {
-        std::cout << "UKNKOWN" << arguments[0] << std::endl;
-        exit(-1);
+    if(!irc::is_known_numeric_reply(arguments[0])) {
+        std::cerr << "UKNKOWN" << arguments[0] << std::endl;
     }
 
-    numericReply = (irc::numeric_reply)std::stoi(arguments[0]);
+    numeric_reply = (irc::numeric_reply)std::stoi(arguments[0]);
 
     // Switch on the recognized numeric reply to handle different server responses
-    switch (numericReply) {
+    switch (numeric_reply) {
         case irc::RPL_WELCOME:
         case irc::RPL_YOURHOST:
         case irc::RPL_NOTOPIC:
@@ -300,10 +292,10 @@ void bot::handleServerCommand(std::string hostname, std::vector<std::string> arg
             //print this
             break;
         case irc::RPL_NAMREPLY: {
-            std::string namesRaw = arguments.back(); // Extract the raw names string 
-            std::vector<std::string> names = split_string(namesRaw, " ", true); // Separate names by a space
+            std::string names_raw = arguments.back(); // Extract the raw names string 
+            std::vector<std::string> names = split_string(names_raw, " ", true); // Separate names by a space
             for(const std::string& name : names) {
-                bot::usersInBotChannel.insert(name); // Add each user to the bot's tracking set
+                bot::users_in_bot_channel.insert(name); // Add each user to the bot's tracking set
             }
             break;
         }
@@ -311,33 +303,33 @@ void bot::handleServerCommand(std::string hostname, std::vector<std::string> arg
             //ignore, this message indecats the end of the name list
             break;
         default:
-            std::cout << "Unhandled: " << irc::validNumericReplies.find(numericReply)->second << std::endl;
+            std::cerr << "Unhandled: " << irc::valid_numeric_replies.find(numeric_reply)->second << std::endl;
             break;
     }
 }
 
 
 // Function that generates a random fact or sentence 
-std::string getRandomSentence() {
+std::string get_random_fact() {
     
     std::vector<std::string> facts; 
 
-    std::ifstream randomFacts("randomFacts.txt");
+    std::ifstream random_facts("random_facts.txt");
 
-    if (!randomFacts)
+    if (!random_facts)
     {
-        std::cout << "Unable to open the file" << std::endl;
+        std::cerr << "Unable to open the file" << std::endl;
         return "Error: unable to retrieve fact ";
     }
     
     std::string line;
 
-    while (std::getline(randomFacts, line))
+    while (std::getline(random_facts, line))
     {
         facts.push_back(line);
     }
 
-    randomFacts.close();
+    random_facts.close();
     
     if (facts.empty()){
         return "No facts found in the file. ";
@@ -345,17 +337,17 @@ std::string getRandomSentence() {
 
     std::srand(std::time(0));
 
-    int randomIndex = std::rand() % facts.size();
+    int random_index = std::rand() % facts.size();
 
-    return facts[randomIndex];
+    return facts[random_index];
 }
 
 // Funcion to handle responses to private (i.e., PRIVMSG messages) messages from the user 
-void bot::respondToPrivmsg(std::string nickname, std::string channel, std::string text, bool isDm, bot::details botDetails, bot::clientSocket botSocket) {
+void bot::respond_to_private_message(std::string nickname, std::string channel, std::string text, bool isDm, bot::details bot_details, bot::clientSocket bot_socket) {
     
     // If its a direct message, the bot replies with a random fact 
     if(isDm) {
-        bot::sendMessage("PRIVMSG " + nickname + " :"+getRandomSentence()+"\r\n", botSocket); //FIXME: make random sentence
+        bot::send_message("PRIVMSG " + nickname + " :"+get_random_fact()+"\r\n", bot_socket); //FIXME: make random sentence
         return;
     }
 
@@ -365,7 +357,7 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
 
         // Handle the !slap command without specifying a user
         if(text == "!slap") {
-            std::string user = getRandomUser(nickname, botDetails); // Get a user to slap 
+            std::string user = get_random_user(nickname, bot_details); // Get a user to slap 
             if(user.empty()) {
                 response = "There's no one to slap!";
             } else {
@@ -376,7 +368,7 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
         // Handle !slap command with a specified target 
         else if (text.starts_with("!slap ")) {
             std::string user = split_string(text, " ", true)[1];
-            if(bot::usersInBotChannel.find(user) != bot::usersInBotChannel.end()) {
+            if(bot::users_in_bot_channel.find(user) != bot::users_in_bot_channel.end()) {
                 response = "*Slapped " + user + " with a trout*";
             } else {
                 response = "*Slapped " + nickname + " with a trout* since " + user + " couldn't be found!";
@@ -390,16 +382,16 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
             std::string setTopic;
 
             setTopic = text.substr(7);
-            bot::sendMessage("TOPIC " + channel + " :" + setTopic +"\r\n", botSocket);
-            bot::readMessage(botSocket);
-            bot::sendMessage("NAMES " + channel + "\r\n", botSocket);
-            irc::command recievedCommand = irc::parseCommand(bot::readMessage(botSocket)); //Parse the message recieved into an IRC command
+            bot::send_message("TOPIC " + channel + " :" + setTopic +"\r\n", bot_socket);
+            bot::read_message(bot_socket);
+            bot::send_message("NAMES " + channel + "\r\n", bot_socket);
+            irc::command recieved_command = irc::parse_command(bot::read_message(bot_socket)); //Parse the message recieved into an IRC command
 
             //Handle recieved command
-            bot::handleCommand(recievedCommand, botDetails, botSocket);
+            bot::handle_command(recieved_command, bot_details, bot_socket);
 
             response = "users who can engage with topic " + setTopic + ": ";
-            for (const std::string& name : bot::usersInBotChannel)
+            for (const std::string& name : bot::users_in_bot_channel)
             {
                 response += name + ", " ;
             }
@@ -409,42 +401,40 @@ void bot::respondToPrivmsg(std::string nickname, std::string channel, std::strin
         
         if(response.empty())
             return;
-        bot::sendMessage("PRIVMSG " + channel + " :"+response+"\r\n", botSocket);
+        bot::send_message("PRIVMSG " + channel + " :"+response+"\r\n", bot_socket);
     }
 
 }
 
 // Function that handles a users command 
-void bot::handleUserCommand(std::string nickname, std::string username, std::string ip, std::vector<std::string> arguments, bot::clientSocket botSocket, bot::details botDetails) {
+void bot::handle_user_command(std::string nickname, std::string username, std::string ip, std::vector<std::string> arguments, bot::clientSocket bot_socket, bot::details bot_details) {
 
     std::string channel = arguments[1];
-
-    std::cout << "arguments[0]: " << arguments[0] << std::endl;
     
     // When PRIVMSG is seen respontToPrivmsg() is called and the appropriate parameters are given to it
     if(arguments[0] == "PRIVMSG") 
     {
         std::string text = arguments[2];
-        bool isDm = (channel == botDetails.name);
-        respondToPrivmsg(nickname, channel, text, isDm, botDetails, botSocket);
+        bool isDm = (channel == bot_details.name);
+        respond_to_private_message(nickname, channel, text, isDm, bot_details, bot_socket);
     }
 
     // If JOIN is seen the bot will print the user and what channel they have joined 
-    // The user is also added to the usersInBotChannel
+    // The user is also added to the users_in_bot_channel
     else if (arguments[0] == "JOIN") 
     {
         std::cout << nickname << " joined channel: [" << channel << "]" << std::endl;
-        bot::usersInBotChannel.insert(nickname);
+        bot::users_in_bot_channel.insert(nickname);
     } 
 
     // If PART is seen then a print statement is produced specifying the user and what channel they have left
-    // The specific user is also removed from the usersInBotChannel 
+    // The specific user is also removed from the users_in_bot_channel 
     else if (arguments[0] == "PART") 
     {
 
         std::cout << nickname << " left channel: [" << channel << "]" << std::endl;
-        if(nickname != botDetails.name) {
-            bot::usersInBotChannel.erase(nickname);
+        if(nickname != bot_details.name) {
+            bot::users_in_bot_channel.erase(nickname);
         }
     } 
 
@@ -453,7 +443,7 @@ void bot::handleUserCommand(std::string nickname, std::string username, std::str
     {
         std::cout << nickname << " quit with message : [" << arguments[1] << "]" << std::endl;
         if(nickname != "stap_bot2") {
-            bot::usersInBotChannel.erase(nickname);
+            bot::users_in_bot_channel.erase(nickname);
         }
     }
 
@@ -464,48 +454,48 @@ void bot::handleUserCommand(std::string nickname, std::string username, std::str
     }
 }
 
-void bot::handleCommand(irc::command commandToHandle, bot::details botDetails, bot::clientSocket botSocket ) {
+void bot::handle_command(irc::command command_to_handle, bot::details bot_details, bot::clientSocket bot_socket ) {
 
     // If command starts with colon, it's either from user or server
-    if(commandToHandle.name.starts_with(":")) 
+    if(command_to_handle.name.starts_with(":")) 
     {
 
         // Extract the user or hostname 
-        std::string hostnameOrUserNickname = commandToHandle.name.substr(1,commandToHandle.name.length()-1);
-        size_t endOfNickname = hostnameOrUserNickname.find('!'); // find nickname delimiter
+        std::string hostname_or_nickname = command_to_handle.name.substr(1,command_to_handle.name.length()-1);
+        size_t end_of_nickname = hostname_or_nickname.find('!'); // find nickname delimiter
 
         // If '!' exists, its from a user 
-        if(endOfNickname != std::string::npos)
+        if(end_of_nickname != std::string::npos)
         {
             // Raw string is extracted, containing nickname, userrname and the IP 
-            std::string userRaw = hostnameOrUserNickname;
-            size_t endOfUserName = userRaw.find('@'); // indicates the end of the username
-            std::string nickname = userRaw.substr(0,endOfNickname); // Fimd the nickname
-            std::string username = userRaw.substr(endOfNickname+1, endOfUserName-endOfNickname-1); // Gets the username
-            std::string ip = userRaw.substr(endOfUserName+1); // Get the IP address
+            std::string user_raw = hostname_or_nickname;
+            size_t end_of_username = user_raw.find('@'); // indicates the end of the username
+            std::string nickname = user_raw.substr(0,end_of_nickname); // Fimd the nickname
+            std::string username = user_raw.substr(end_of_nickname+1, end_of_username-end_of_nickname-1); // Gets the username
+            std::string ip = user_raw.substr(end_of_username+1); // Get the IP address
 
             // Handle teh user command using the extracted information
-            handleUserCommand(nickname,username,ip, commandToHandle.arguments, botSocket, botDetails);
+            handle_user_command(nickname,username,ip, command_to_handle.arguments, bot_socket, bot_details);
         } 
 
         // Otherwise it is established as a server message
         else 
         {
-            std::string hostname = hostnameOrUserNickname;
-            handleServerCommand(hostname, commandToHandle.arguments);
+            std::string hostname = hostname_or_nickname;
+            handle_server_command(hostname, command_to_handle.arguments);
         }
     } 
 
     // Checks if a command is a PING command
-    else if (commandToHandle.name == "PING") 
+    else if (command_to_handle.name == "PING") 
     {
-        std::string raw = commandToHandle.raw;
+        std::string raw = command_to_handle.raw;
         raw[1] = 'O';
         raw += "\r\n";
-        bot::sendMessage(raw, botSocket);
+        bot::send_message(raw, bot_socket);
     } 
     else 
     {
-        std::cout << "Uknown command: "<< commandToHandle.name << std::endl;
+        std::cerr << "Uknown command: "<< command_to_handle.name << std::endl;
     }
 }

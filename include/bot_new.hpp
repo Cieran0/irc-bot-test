@@ -54,29 +54,29 @@ namespace bot {
 
     int main(const std::string_view& program, const std::vector<std::string_view>& arguments);
 
-    bot::details getDetailsFromArguments(const std::vector<std::string_view>& arguments);
-    bot::clientSocket openSocket(const bot::details& botDetails);
+    bot::details get_details_from_arguments(const std::vector<std::string_view>& arguments);
+    bot::clientSocket open_socket(const bot::details& botDetails);
 
-    std::string readMessage(bot::clientSocket botSocket);
-    void sendMessage(std::string message, bot::clientSocket botSocket); 
+    std::string read_message(bot::clientSocket bot_socket);
+    void send_message(std::string message, bot::clientSocket bot_socket); 
 
     void pong(std::string messageRecieved);
-    void respondToMessages(std::string messageRecieved, bot::clientSocket botSocket, bot::details botInfo);
+    void respondToMessages(std::string messageRecieved, bot::clientSocket bot_socket, bot::details botInfo);
     std::vector<std::string> getUsersInChannel(const std::string& sender, const std::string& botName, const std::string& serverResponse);
-    std::string getRandomUser(const std::string& sender, bot::details botInfo);
+    std::string get_random_user(const std::string& sender, bot::details botInfo);
     std::string parseMessage(std::string messageRecieved);
     std::string readName(std::string messageRecieved);
 
     void die();
 
-    void sendInitalMessages(bot::clientSocket botSocket, bot::details botDetails);
+    void send_inital_message(bot::clientSocket bot_socket, bot::details botDetails);
 
-    void handleCommand(irc::command commandToHandle, bot::details botDetails, bot::clientSocket botSocket);
-    void handleUserCommand(std::string nickname, std::string username, std::string ip, std::vector<std::string> arguments, bot::clientSocket botSocket,  bot::details botDetails);
-    void respondToPrivmsg(std::string nickname, std::string channel, std::string text, bool isDm, bot::details botDetails, bot::clientSocket botSocket);
-    void handleServerCommand(std::string hostname, std::vector<std::string> arguments);
+    void handle_command(irc::command command_to_handle, bot::details botDetails, bot::clientSocket bot_socket);
+    void handle_user_command(std::string nickname, std::string username, std::string ip, std::vector<std::string> arguments, bot::clientSocket bot_socket,  bot::details botDetails);
+    void respond_to_private_message(std::string nickname, std::string channel, std::string text, bool isDm, bot::details botDetails, bot::clientSocket bot_socket);
+    void handle_server_command(std::string hostname, std::vector<std::string> arguments);
 
-    extern bool isAlive;
-    extern std::unordered_set<std::string> usersInBotChannel;
+    extern bool is_alive;
+    extern std::unordered_set<std::string> users_in_bot_channel;
 
 }
